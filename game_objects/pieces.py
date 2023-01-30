@@ -51,3 +51,6 @@ BLACK_ROOK = pygame.transform.scale(BLACK_ROOK_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT
 BLACK_KNIGHT = pygame.transform.scale(BLACK_KNIGHT_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT))
 BLACK_BISHOP = pygame.transform.scale(BLACK_BISHOP_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT))
 BLACK_PAWN = pygame.transform.scale(BLACK_PAWN_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT))
+
+
+PIECE = pygame.transform.scale(pygame.image.load(os.path.join(DIR, bp.image)), (PIECE_WIDTH, PIECE_HEIGHT))
