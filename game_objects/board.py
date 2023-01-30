@@ -1,4 +1,4 @@
-from pieces import (
+from moves.pieces import (
     wk,
     wq,
     wr,
@@ -31,6 +31,21 @@ def make_readable(board):
     for k in range(1, len(board) +1):
         printer = []
         row = board[-k]
+
+        for k1 in range(len(board)):
+            if type(row[k1]) == str:
+                printer.append(row[k1])
+            else:
+                printer.append(row[k1].team + row[k1].type)
+        
+        print(printer, '\n')
+
+    return 1
+
+def make_readable_black_perspective(board):
+    for k in range(1, len(board) +1):
+        printer = []
+        row = board[k]
 
         for k1 in range(len(board)):
             if type(row[k1]) == str:

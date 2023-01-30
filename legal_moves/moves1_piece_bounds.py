@@ -1,4 +1,4 @@
-from moves_edge_bounds import (
+from legal_moves.moves_edge_bounds import (
     rook_moves_unbounded,
     knight_moves_unbounded,
     bishop_moves_unbounded,
@@ -7,16 +7,15 @@ from moves_edge_bounds import (
     white_pawn_moves_unbounded,
     black_pawn_moves_unbounded
 )
-from board import board, starting_board, make_readable
-
-from pieces import (
+from moves.board import board, starting_board, make_readable
+from moves.pieces import (
 
     wb,
     wp,
     bq
 
 )
-from move_categories import Move, distance, direction
+from legal_moves.move_categories import Move, distance, direction
 
 def detect_piece_in_path(board, moves, piece, location_index):
     new_moves = []
@@ -153,14 +152,14 @@ def display_bounded_moves1(board, location_index):
 
     return board
 
-board[5][4] = bq
+board[2][4] = bq
 board[5][3] = wb
 board[5][2] = wp
 board[5][6] = wp
 
-moves = bounded_moves1(board, (5, 4))
+moves = bounded_moves1(board, (2, 4))
 
-board1 = display_bounded_moves1(board, (5, 4))
+board1 = display_bounded_moves1(board, (2, 4))
 print(make_readable(board1))
 
 #peices can be bounded by 2 things, the first is a piece being in the way (the knight is the exception to this bound)

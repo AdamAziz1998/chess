@@ -1,8 +1,11 @@
+import sys
+sys.path.append('../CHESS')
+
 import os
 import time
 import pygame
-
-from pieces import (
+from gameplay.code_game_transfers import array_coords_to_pygame_coords
+from game_objects.pieces import (
     WHITE_KING,
     WHITE_QUEEN,
     WHITE_ROOK,
@@ -25,9 +28,9 @@ WIN = pygame.display.set_mode((WIDTH, HIEGHT))
 pygame.display.set_caption("Chess")
 FPS = 60
 
-BACKGROUND = pygame.transform.scale(pygame.image.load('images', 'board.png'), (WIDTH, HIEGHT))
+BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join('images', 'board.png')), (WIDTH, HIEGHT))
 
-location_array = [(0,0) for i in range(12)]
+location_array = [(i-i,0) for i in range(12)]
 def blit_pieces(location_array): #this will be in the order as the pieces below
 
     WIN.blit(WHITE_KING, (location_array[0][0], location_array[0][1]))
@@ -46,7 +49,8 @@ def blit_pieces(location_array): #this will be in the order as the pieces below
 
 def draw_window():
     WIN.blit(BACKGROUND, (0, 0))
-    blit_pieces(location_array)
+    WIN.blit(WHITE_KING, array_coords_to_pygame_coords((1, 5)))
+    #blit_pieces(location_array)
     
 
     pygame.display.update()
