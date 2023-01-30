@@ -1,4 +1,4 @@
-from moves.pieces import (
+from game_objects.pieces import (
     wk,
     wq,
     wr,
