@@ -2,9 +2,15 @@ import sys
 sys.path.append('../CHESS')
 
 import os
-import time
 import pygame
-from gameplay.code_game_transfers import array_coords_to_pygame_coords
+
+from gameplay.code_game_transfers import (
+    array_coords_to_pygame_coords, 
+    all_center_coords, 
+    find_closest_center_to_click,
+    coord_to_index
+)
+
 from game_objects.pieces import (
     WHITE_KING,
     WHITE_QUEEN,
@@ -22,6 +28,7 @@ from game_objects.pieces import (
 
 pygame.init()
 
+COORDS = all_center_coords()
 WIDTH = 640
 HIEGHT = 640
 WIN = pygame.display.set_mode((WIDTH, HIEGHT))
@@ -52,14 +59,25 @@ def draw_window():
     WIN.blit(WHITE_KING, array_coords_to_pygame_coords((1, 5)))
     #blit_pieces(location_array)
     
+    
+    event = pygame.event.wait()
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        mouse_pos = pygame.mouse.get_pos()
+
+        #this finds the coordinate of the swquare clicked
+        square_center_coords = find_closest_center_to_click(COORDS, mouse_pos)
+
+        #convert back to list index
+        index = coord_to_index(square_center_coords)
+    
 
     pygame.display.update()
 
 def main():
-    clock = pygame.time.Clock()
+    #clock = pygame.time.Clock()
     run = True
     while run:
-        clock.tick(FPS)
+        #clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False

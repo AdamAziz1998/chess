@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../CHESS')
+
 from legal_moves.moves_edge_bounds import (
     rook_moves_unbounded,
     knight_moves_unbounded,
@@ -7,8 +10,8 @@ from legal_moves.moves_edge_bounds import (
     white_pawn_moves_unbounded,
     black_pawn_moves_unbounded
 )
-from moves.board import board, starting_board, make_readable
-from moves.pieces import (
+from game_objects.board import board, starting_board, make_readable
+from game_objects.pieces import (
 
     wb,
     wp,
@@ -141,7 +144,12 @@ def moves_piece_bounded(board, location_index):
     else:
         return bounded_moves_pathed(board, location_index)
 
-
+def moves_piece_bounded1(board, location_index):
+    i, j = location_index
+    if type(board[i][j]) != str:
+        return moves_piece_bounded(board, location_index)
+    else:
+        return []
 
 def display_bounded_moves1(board, location_index):
     moves = moves_piece_bounded(board, location_index)
@@ -161,11 +169,3 @@ moves = bounded_moves1(board, (2, 4))
 
 board1 = display_bounded_moves1(board, (2, 4))
 print(make_readable(board1))
-
-#peices can be bounded by 2 things, the first is a piece being in the way (the knight is the exception to this bound)
-#the second bound a piece might be pinned (this can be handled later close to finishing game mechanics)
-
-#plan to set bound 1: create a distance variable for each move, and direction variable, 
-#if a piece in the way then all moves same direction with a bigger distance will no longer be a move
-#if this piece is enemy then replace with 'k ' else replace with '  ' 
-#this will have to be on a seperate board so it doesnt replace piece
