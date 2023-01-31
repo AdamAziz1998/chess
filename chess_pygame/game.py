@@ -12,6 +12,7 @@ from gameplay.code_game_transfers import (
     find_closest_center_to_click,
     coord_to_index
 )
+from gameplay.moving_a_piece import make_move
 from game_objects.board import board
 from legal_moves.moves1_piece_bounds import moves_piece_bounded1
 
@@ -44,8 +45,9 @@ FPS = 60
 
 BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join('images', 'board.png')), (WIDTH, HIEGHT))
 PIECE_SELECTED = False
-MY_TEAM = 'w'
+TEAM = 'w'
 PREVIOUS_SELECTED_COORDS = (-10, -10)
+SELECTED_MOVES_INDEX = []
 
 def blit_pieces(board): #this will be in the order as the pieces below
     for i_row in range(7):
@@ -80,7 +82,7 @@ def blit_moves(moves):
             WIN.blit(circle1, pygame_move_coord)
 
 def draw_window():
-    global PIECE_SELECTED, PREVIOUS_SELECTED_COORDS
+    global PIECE_SELECTED, PREVIOUS_SELECTED_COORDS, SELECTED_MOVES_INDEX, TEAM
 
     WIN.blit(BACKGROUND, (0, 0))
     
@@ -93,21 +95,26 @@ def draw_window():
 
         #convert back to list index
         index = coord_to_index(square_center_coords)
-        
-
-        #here we need to check if the moves are from this team or a different team
-        #if its from this team then show the potential moves for this piece 
-        #if its not from my team then new nested if condition below
-        #if i have a kill circle on this then kill function will go there
-            
         moves = moves_piece_bounded1(board, index)
-        if len(moves) != 0:
+
+        #if there is a piece in my team
+        if type(board[index[0]][index[1]]) != str and board[index[0]][index[1]].team == TEAM:
             PIECE_SELECTED = True
             PREVIOUS_SELECTED_COORDS = index
+            SELECTED_MOVES_INDEX = [i.location_index for i in moves]
+        #also if this is a move square
+        elif index in SELECTED_MOVES_INDEX:
+            1
+            ### later a move can be implimented here ###
         else:
             PIECE_SELECTED = False
+
+        #what I want
+        # if clicked on a piece then show moves
+        # if not on a peice then if its a currently showing move then keep (have teams in for this because of kill moves)
+        # otherwise remove moves 
     
-    if PIECE_SELECTED == True:
+    if PIECE_SELECTED:
         moves = moves_piece_bounded1(board, PREVIOUS_SELECTED_COORDS)
         blit_moves(moves)
 

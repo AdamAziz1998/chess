@@ -164,6 +164,3 @@ board[5][4] = bq
 board[5][3] = wb
 board[5][2] = wp
 board[5][6] = wp
-
-#board1 = display_bounded_moves1(board, (5, 4))
-#print(make_readable(board1))
