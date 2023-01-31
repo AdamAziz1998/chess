@@ -160,12 +160,10 @@ def display_bounded_moves1(board, location_index):
 
     return board
 
-board[2][4] = bq
+board[5][4] = bq
 board[5][3] = wb
 board[5][2] = wp
 board[5][6] = wp
 
-moves = bounded_moves1(board, (2, 4))
-
-board1 = display_bounded_moves1(board, (2, 4))
-print(make_readable(board1))
+#board1 = display_bounded_moves1(board, (5, 4))
+#print(make_readable(board1))
