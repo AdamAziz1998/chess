@@ -67,25 +67,25 @@ def bishop_moves_unbounded(location_index):
     i, j = location_index
 
     i2, j2 = location_index
-    while i2 != 7 and i2 != 0 and j2 != 7 and j2 != 0:
+    while i2 != 7 and j2 != 7:
         i2, j2 = i2 + 1, j2 + 1
         move = (i2, j2)
         moves.append(move)
     
     i2, j2 = location_index
-    while i2 != 7 and i2 != 0 and j2 != 7 and j2 != 0:
+    while i2 != 7 and j2 != 0:
         i2, j2 = i2 + 1, j2 - 1
         move = (i2, j2)
         moves.append(move)
 
     i2, j2 = location_index
-    while i2 != 7 and i2 != 0 and j2 != 7 and j2 != 0:
+    while i2 != 0 and j2 != 7:
         i2, j2 = i2 - 1, j2 + 1
         move = (i2, j2)
         moves.append(move)
 
     i2, j2 = location_index
-    while i2 != 7 and i2 != 0 and j2 != 7 and j2 != 0:
+    while i2 != 0 and j2 != 0:
         i2, j2 = i2 - 1, j2 - 1
         move = (i2, j2)
         moves.append(move)

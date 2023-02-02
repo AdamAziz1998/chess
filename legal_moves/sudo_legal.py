@@ -10,14 +10,6 @@ from legal_moves.moves_edge_bounds import (
     white_pawn_moves_unbounded,
     black_pawn_moves_unbounded
 )
-from game_objects.board import board, starting_board, make_readable
-from game_objects.pieces import (
-
-    wb,
-    wp,
-    bq
-
-)
 from legal_moves.move_categories import Move, distance, direction
 
 def detect_piece_in_path(board, moves, piece, location_index):
@@ -143,24 +135,4 @@ def moves_piece_bounded(board, location_index):
     
     else:
         return bounded_moves_pathed(board, location_index)
-
-def moves_piece_bounded1(board, location_index):
-    i, j = location_index
-    if type(board[i][j]) != str:
-        return moves_piece_bounded(board, location_index)
-    else:
-        return []
-
-def display_bounded_moves1(board, location_index):
-    moves = moves_piece_bounded(board, location_index)
-
-    for move in moves:
-        i, j = move.location_index
-        board[i][j] = move.type
-
-    return board
-
-board[5][4] = bq
-board[5][3] = wb
-board[5][2] = wp
-board[5][6] = wp
+        

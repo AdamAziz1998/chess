@@ -47,7 +47,7 @@ def direction(move, location_index):
     
     return dir
 
-#move types are 'k' and 'x' meaning kill move and move with no kill
+#move types are 'k' and 'x ' meaning kill move and move with no kill
 #direction consists of u for up d for down l for left r for right 
 # and a combination of the previous ending with d representing a diagonal movement for example dld meaning down-left diagonal
 class Move:
