@@ -41,7 +41,6 @@ def bounded_moves(board, location_index):
 
     if piece_type == 'r':
         moves = rook_moves_unbounded(location_index)
-        
 
     if piece_type == 'n':
         moves = knight_moves_unbounded(location_index)

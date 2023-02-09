@@ -16,14 +16,15 @@ from game_objects.pieces import (
 board = [['  ' for i1 in range(8)] for i in range(8)]
 
 starting_board = [
-    [br, bkn, bb, bq, bk, bb, bkn, br],
-    [bp for i in range(8)],
-    ['  ' for i in range(8)],
-    ['  ' for i in range(8)],
-    ['  ' for i in range(8)],
-    ['  ' for i in range(8)],
+    [wr, wkn, wb, wq, wk, wb, wkn, wr],
     [wp for i in range(8)],
-    [wr, wkn, wb, wq, wk, wb, wkn, wr]
+    ['  ' for i in range(8)],
+    ['  ' for i in range(8)],
+    ['  ' for i in range(8)],
+    ['  ' for i in range(8)],
+    [bp for i in range(8)],
+    [br, bkn, bb, bq, bk, bb, bkn, br]
+    
 
 ]
 
