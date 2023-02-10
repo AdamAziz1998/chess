@@ -13,35 +13,27 @@ from gameplay.code_game_transfers import (
     coord_to_index
 )
 from gameplay.turn import turn
-from game_objects.board import board
+from game_objects.board import starting_board
 from legal_moves.legal import display_moves
 
 from game_objects.pieces import (
-    wk,
+    Piece,
     wq,
     wr,
     wkn,
     wb,
-    wp,
-    bk,
     bq,
     br,
     bkn,
     bb,
-    bp,
     DIR,
     PIECE_HEIGHT,
     PIECE_WIDTH
 )
 
-board[0][7] = wr
-board[0][0] = wr
-board[0][4] = wk
-board[7][0] = br
-board[7][7] = br
-board[7][4] = bk
-board[1][1] = wp
-board[2][2] = bp
+from chess_bot.chess_models import random_moving_bot
+
+board = starting_board
 
 pygame.init()
 
@@ -115,8 +107,9 @@ def blit_UI(pawn_transform, dead_whites, dead_blacks):
             coord_unadj = array_coords_to_pygame_coords((0, UI_imgs.index(UI_img)))
             coord_adj = (coord_unadj[0] + 320, coord_unadj[1] + 80)
             WIN.blit(scaled_UI_img, coord_adj)
+            
 
-def draw_window():
+def draw_window(single_player: bool, my_team: str):
     global PIECE_SELECTED, PREVIOUS_SELECTED_COORDS, SELECTED_MOVES_INDEX, TEAM
     global board, moves, dead_whites, dead_blacks, pawn_transform, pawn_transform_piece
     global index, move
@@ -128,7 +121,7 @@ def draw_window():
         blit_UI(TEAM, False, False)
     
     event = pygame.event.wait()
-    if event.type == pygame.MOUSEBUTTONDOWN:
+    if event.type == pygame.MOUSEBUTTONDOWN and (TEAM == my_team or not single_player):
         mouse_pos = pygame.mouse.get_pos()
 
         #if board is clicked
@@ -169,19 +162,23 @@ def draw_window():
 
             #trnasform to queen
             if 640 - 80 < x_mouse_pos < 640:
-                pawn_transform_piece = wq if TEAM == 'w' else bq
+                img = wb.image if TEAM == 'w' else bb.image
+                pawn_transform_piece = Piece(TEAM, 'q', img, False, False)
 
             #transform to bishop
             elif 640 - 160 < x_mouse_pos < 640 - 80:
-                pawn_transform_piece = wb if TEAM == 'w' else bb
+                img = wb.image if TEAM == 'w' else bb.image
+                pawn_transform_piece = Piece(TEAM, 'b', img, False, False)
 
             #transform to knight
             elif 640 - 240 < x_mouse_pos < 640 - 160:
-                pawn_transform_piece = wkn if TEAM == 'w' else bkn
+                img = wkn.image if TEAM == 'w' else bkn.image
+                pawn_transform_piece = Piece(TEAM, 'n', img, False, False)
 
             #transform to rook
             elif 640 - 320 < x_mouse_pos < 640 - 240:
-                pawn_transform_piece = wr if TEAM == 'w' else br
+                img = wr.image if TEAM == 'w' else br.image
+                pawn_transform_piece = Piece(TEAM, 'r', img, False, False)
             
             if pawn_transform_piece:
                 board, TEAM = turn(board, PREVIOUS_SELECTED_COORDS, index, TEAM, move, pawn_transform_piece)
@@ -189,8 +186,12 @@ def draw_window():
                 PIECE_SELECTED = False
                 pawn_transform = False
                 pawn_transform_piece = False
+    
 
-            
+    if single_player and TEAM != my_team:
+        #the bot would go on the line below
+        ai_move = random_moving_bot(board, TEAM)
+        board, TEAM = turn(board, ai_move.org_location, ai_move.location_index, TEAM, ai_move, ai_move.pawn_transform)
     
     if PIECE_SELECTED:
         moves = display_moves(board, PREVIOUS_SELECTED_COORDS)
@@ -209,9 +210,23 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        draw_window()
+        single_player = True
+        my_team = 'w'
+        
+        draw_window(single_player, my_team)
 
     pygame.quit()
 
 if __name__ == "__main__":
     main()
+
+
+#what do i want:
+# - firstly I need to have the option to make this single player
+# - later on I need to have the option to make this multiplayer, this will have a screenflip for white and black
+# - create an annimation for the piece moving from one square to another
+
+#the ai will use minimax algorithm, it can also be anhanced with alpha beta pruning
+#also downloading many gm games can help for the first 3-10 moves ish
+#use game positioning to help the computer make a decision
+#remember to avoid stalemate

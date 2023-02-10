@@ -48,13 +48,14 @@ def direction(move, location_index):
     return dir
 
 #move types are 'k' and 'x ' meaning kill move and move with no kill, 
-# maybe will have 'p' for passant and 'c' for castle and 't' for when a pawn changes to a new piece at end of path
+# 'p' for passant and 'c' for castle and 't' for when a pawn changes to a new piece at end of path
 #direction consists of u for up d for down l for left r for right 
 # and a combination of the previous ending with d representing a diagonal movement for example dld meaning down-left diagonal
 class Move:
-    def __init__(self, org_location: tuple, location_index: tuple, type: str, distance: float, direction: str):
+    def __init__(self, org_location: tuple, location_index: tuple, type: str, distance: float, direction: str, pawn_transform = None):
         self.org_location = org_location
         self.location_index = location_index
         self.type = type
         self.distance = distance
         self.direction = direction
+        self.pawn_transform = pawn_transform

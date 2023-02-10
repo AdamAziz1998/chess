@@ -1,29 +1,30 @@
 from game_objects.pieces import (
-    wk,
-    wq,
-    wr,
-    wkn,
-    wb,
-    wp,
-    bk,
-    bq,
-    br,
-    bkn,
-    bb,
-    bp
+    wk1,
+    bk1,
+    wq1,
+    bq1,
+    wr1, wr2,
+    br1, br2,
+    wkn1, wkn2,
+    bkn1, bkn2,
+    wb1, wb2,
+    bb1, bb2,
+    wp1, wp2, wp3, wp4, wp5, wp6, wp7, wp8, 
+    bp1, bp2, bp3, bp4, bp5, bp6, bp7, bp8 
+    
 )
 
 board = [['  ' for i1 in range(8)] for i in range(8)]
 
 starting_board = [
-    [wr, wkn, wb, wq, wk, wb, wkn, wr],
-    [wp for i in range(8)],
+    [wr1, wkn1, wb1, wq1, wk1, wb2, wkn2, wr2],
+    [wp1, wp2, wp3, wp4, wp5, wp6, wp7, wp8],
     ['  ' for i in range(8)],
     ['  ' for i in range(8)],
     ['  ' for i in range(8)],
     ['  ' for i in range(8)],
-    [bp for i in range(8)],
-    [br, bkn, bb, bq, bk, bb, bkn, br]
+    [bp1, bp2, bp3, bp4, bp5, bp6, bp7, bp8],
+    [br1, bkn1, bb1, bq1, bk1, bb2, bkn2, br2]
     
 
 ]
