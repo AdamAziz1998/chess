@@ -8,6 +8,7 @@ class Piece:
         self.image = image
         self.move0 = move0
         self.move1 = move1
+        
 
 # using for the images
 wk = Piece('w', 'k', 'white_king.png', True, False)

@@ -3,6 +3,7 @@ sys.path.append('../CHESS')
 
 import os
 import pygame
+from chess_bot.chess_models import random_moving_bot, endgame_checkers
 
 from gameplay.code_game_transfers import (
     array_coords_to_pygame_coords, 
@@ -55,6 +56,8 @@ dead_whites = []
 dead_blacks = []
 pawn_transform = False
 pawn_transform_piece = False
+kill = 0
+mouse_off = False
 
 def blit_pieces(board): #this will be in the order as the pieces below
     for i_row in range(8):
@@ -90,15 +93,15 @@ def blit_moves(moves):
 
 #pawn_transform will be false if no transformations are happening, otherwise it will be 'w' or 'b' to show what piece to
 #  choose to transform the pawn into
-def blit_UI(pawn_transform, dead_whites, dead_blacks):
+def blit_UI(pawn_transform, dead_whites, dead_blacks, TEAM):
     #creating the UI background
     color = (50, 50, 50)
     pygame.draw.rect(WIN, color, pygame.Rect(0, HIEGHT - UI_SPACE, HIEGHT, WIDTH))
     UI_imgs = []
 
-    if pawn_transform == 'w':
+    if TEAM == 'w':
         UI_imgs = [wr.image, wkn.image, wb.image, wq.image]
-    elif pawn_transform == 'b':
+    elif TEAM == 'b':
         UI_imgs = [br.image, bkn.image, bb.image, bq.image]
     
     if pawn_transform:
@@ -107,21 +110,26 @@ def blit_UI(pawn_transform, dead_whites, dead_blacks):
             coord_unadj = array_coords_to_pygame_coords((0, UI_imgs.index(UI_img)))
             coord_adj = (coord_unadj[0] + 320, coord_unadj[1] + 80)
             WIN.blit(scaled_UI_img, coord_adj)
-            
 
-def draw_window(single_player: bool, my_team: str):
+def draw_window(single_player: bool, my_team: str, game_status: str):
     global PIECE_SELECTED, PREVIOUS_SELECTED_COORDS, SELECTED_MOVES_INDEX, TEAM
     global board, moves, dead_whites, dead_blacks, pawn_transform, pawn_transform_piece
-    global index, move
+    global index, move, kill, mouse_off
 
     WIN.blit(BACKGROUND, (0, 0))
     if not pawn_transform:
-        blit_UI(False, False, False)
+        blit_UI(False, False, False, TEAM)
     else:
-        blit_UI(TEAM, False, False)
+        blit_UI(TEAM, False, False, TEAM)
+    
+    if single_player and TEAM != my_team and game_status == 'continue':
+        #the bot would go on the line below
+        ai_move = random_moving_bot(board, TEAM)
+        board, TEAM, kill = turn(board, ai_move.org_location, ai_move.location_index, TEAM, ai_move, ai_move.pawn_transform, kill)
+
     
     event = pygame.event.wait()
-    if event.type == pygame.MOUSEBUTTONDOWN and (TEAM == my_team or not single_player):
+    if event.type == pygame.MOUSEBUTTONDOWN and (TEAM == my_team or not single_player) and game_status == 'continue' and not mouse_off:
         mouse_pos = pygame.mouse.get_pos()
 
         #if board is clicked
@@ -145,7 +153,7 @@ def draw_window(single_player: bool, my_team: str):
             elif index in SELECTED_MOVES_INDEX:
                 move = moves[SELECTED_MOVES_INDEX.index(index)]
                 if move.type != 't':
-                    board, TEAM = turn(board, PREVIOUS_SELECTED_COORDS, index, TEAM, move, False)
+                    board, TEAM, kill = turn(board, PREVIOUS_SELECTED_COORDS, index, TEAM, move, False, kill)
                     SELECTED_MOVES_INDEX = []
                     PIECE_SELECTED = False
                     
@@ -162,7 +170,7 @@ def draw_window(single_player: bool, my_team: str):
 
             #trnasform to queen
             if 640 - 80 < x_mouse_pos < 640:
-                img = wb.image if TEAM == 'w' else bb.image
+                img = wq.image if TEAM == 'w' else bq.image
                 pawn_transform_piece = Piece(TEAM, 'q', img, False, False)
 
             #transform to bishop
@@ -181,21 +189,18 @@ def draw_window(single_player: bool, my_team: str):
                 pawn_transform_piece = Piece(TEAM, 'r', img, False, False)
             
             if pawn_transform_piece:
-                board, TEAM = turn(board, PREVIOUS_SELECTED_COORDS, index, TEAM, move, pawn_transform_piece)
+                board, TEAM, kill = turn(board, PREVIOUS_SELECTED_COORDS, index, TEAM, move, pawn_transform_piece, kill)
                 SELECTED_MOVES_INDEX = []
                 PIECE_SELECTED = False
                 pawn_transform = False
                 pawn_transform_piece = False
     
-
-    if single_player and TEAM != my_team:
-        #the bot would go on the line below
-        ai_move = random_moving_bot(board, TEAM)
-        board, TEAM = turn(board, ai_move.org_location, ai_move.location_index, TEAM, ai_move, ai_move.pawn_transform)
-    
     if PIECE_SELECTED:
         moves = display_moves(board, PREVIOUS_SELECTED_COORDS)
         blit_moves(moves)
+
+    if game_status != 'continue':
+        mouse_off = True
 
     blit_pieces(board)
 
@@ -213,7 +218,9 @@ def main():
         single_player = True
         my_team = 'w'
         
-        draw_window(single_player, my_team)
+        game_status = endgame_checkers(board, kill, TEAM)
+        
+        draw_window(single_player, my_team, game_status)
 
     pygame.quit()
 
@@ -222,8 +229,7 @@ if __name__ == "__main__":
 
 
 #what do i want:
-# - firstly I need to have the option to make this single player
-# - later on I need to have the option to make this multiplayer, this will have a screenflip for white and black
+# - create a screenflip for white and black
 # - create an annimation for the piece moving from one square to another
 
 #the ai will use minimax algorithm, it can also be anhanced with alpha beta pruning
