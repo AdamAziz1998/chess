@@ -1,16 +1,21 @@
 from game_objects.pieces import wr, br, Piece
 
 #location_index is the current location of the piece
-def make_move(board_array, piece_location_index, move_location_index, move, pawn_transform_piece):
+def make_move(board_array, move, pawn_transform_piece):
+    piece_location_index = move.org_location
+    move_location_index = move.location_index
     i, j = piece_location_index
     piece = board_array[i][j]
+
+    for r in board_array:
+        for s in r:
+            if type(s) != str and s.move1:
+                s.move1 = False
 
     if piece.move0:
         piece.move0 = False
         piece.move1 = True
 
-    elif piece.move1:
-        piece.move1 = False
 
     board_array[i][j] = '  '
     i1, j1 = move_location_index
@@ -24,7 +29,7 @@ def make_move(board_array, piece_location_index, move_location_index, move, pawn
         if i == 0:
             board_array[i][5] = Piece('w', 'r', wr.image, False, False)
         else:
-            board_array[i][5] = Piece('b', 'r', wr.image, False, False)
+            board_array[i][5] = Piece('b', 'r', br.image, False, False)
     
     if move.type == 'qc':
         
@@ -32,7 +37,7 @@ def make_move(board_array, piece_location_index, move_location_index, move, pawn
         if i == 0:
             board_array[i][3] = Piece('w', 'r', wr.image, False, False)
         else:
-            board_array[i][3] = Piece('b', 'r', wr.image, False, False)
+            board_array[i][3] = Piece('b', 'r', br.image, False, False)
     
     #this will be false unless the move is the pawn reaching the end of the file, and the pawn_transform input will be
     #  the piece that the pawn transforms into
@@ -49,7 +54,7 @@ def turn(board_array, piece_location_index, move_location_index, team_move, move
     else:
         kill += 1
     
-    board_array1 = make_move(board_array, piece_location_index, move_location_index, move, pawn_transform_piece)
+    board_array1 = make_move(board_array, move, pawn_transform_piece)
     if team_move == 'w':
         team_move = 'b'
     else:

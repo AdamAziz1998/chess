@@ -71,3 +71,46 @@ bp8 = Piece('b', 'p', 'black_pawn.png', True, False)
 DIR = 'images'
 
 PIECE_WIDTH, PIECE_HEIGHT = 50, 50
+
+
+#non first move pieces
+#singular pieces
+wk2 = Piece('w', 'k', 'white_king.png', True, False)
+wq2 = Piece('w', 'q', 'white_queen.png', True, False)
+
+bk2 = Piece('b', 'k', 'black_king.png', True, False)
+bq2 = Piece('b', 'q', 'black_queen.png', True, False)
+
+#binary pieces
+wr3 = Piece('w', 'r', 'white_rook.png', True, False)
+wr4 = Piece('w', 'r', 'white_rook.png', True, False)
+wkn3 = Piece('w', 'n', 'white_knight.png', True, False)
+wkn4 = Piece('w', 'n', 'white_knight.png', True, False)
+wb3 = Piece('w', 'b', 'white_bishop.png', True, False)
+wb4 = Piece('w', 'b', 'white_bishop.png', True, False)
+
+br3 = Piece('b', 'r', 'black_rook.png', True, False)
+br4 = Piece('b', 'r', 'black_rook.png', True, False)
+bkn3 = Piece('b', 'n', 'black_knight.png', True, False)
+bkn4 = Piece('b', 'n', 'black_knight.png', True, False)
+bb3 = Piece('b', 'b', 'black_bishop.png', True, False)
+bb4 = Piece('b', 'b', 'black_bishop.png', True, False)
+
+#pawns
+wp9 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp10 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp11 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp12 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp13 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp14 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp15 = Piece('w', 'p', 'white_pawn.png', False, False)
+wp16 = Piece('w', 'p', 'white_pawn.png', False, False)
+
+bp9 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp10 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp11 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp12 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp13 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp14 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp15 = Piece('b', 'p', 'black_pawn.png', False, False)
+bp16 = Piece('b', 'p', 'black_pawn.png', False, False)

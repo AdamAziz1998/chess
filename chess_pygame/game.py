@@ -4,6 +4,7 @@ sys.path.append('../CHESS')
 import os
 import pygame
 from chess_bot.chess_models import random_moving_bot, endgame_checkers
+from chess_bot.stockfish_bot import engine_move1
 
 from gameplay.code_game_transfers import (
     array_coords_to_pygame_coords, 
@@ -14,7 +15,7 @@ from gameplay.code_game_transfers import (
     coord_to_index
 )
 from gameplay.turn import turn
-from game_objects.board import starting_board
+from game_objects.board import starting_board, sample_board, donny_board
 from legal_moves.legal import display_moves
 
 from game_objects.pieces import (
@@ -32,9 +33,7 @@ from game_objects.pieces import (
     PIECE_WIDTH
 )
 
-from chess_bot.chess_models import random_moving_bot
-
-board = starting_board
+board = donny_board
 
 pygame.init()
 
@@ -124,7 +123,8 @@ def draw_window(single_player: bool, my_team: str, game_status: str):
     
     if single_player and TEAM != my_team and game_status == 'continue':
         #the bot would go on the line below
-        ai_move = random_moving_bot(board, TEAM)
+        ai_move = engine_move1(board, TEAM, 0, kill)
+        print(ai_move.location_index, ai_move.type)
         board, TEAM, kill = turn(board, ai_move.org_location, ai_move.location_index, TEAM, ai_move, ai_move.pawn_transform, kill)
 
     
@@ -216,7 +216,7 @@ def main():
                 run = False
 
         single_player = True
-        my_team = 'w'
+        my_team = 'b'
         
         game_status = endgame_checkers(board, kill, TEAM)
         
@@ -231,8 +231,4 @@ if __name__ == "__main__":
 #what do i want:
 # - create a screenflip for white and black
 # - create an annimation for the piece moving from one square to another
-
-#the ai will use minimax algorithm, it can also be anhanced with alpha beta pruning
-#also downloading many gm games can help for the first 3-10 moves ish
-#use game positioning to help the computer make a decision
-#remember to avoid stalemate
+# - blit dead pieces on UI

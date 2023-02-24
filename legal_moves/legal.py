@@ -118,6 +118,10 @@ def king_side_castling(board, piece):
         i_loc = 0
     else:
         i_loc = 7
+
+    if type(board[i_loc][4]) == str or board[i_loc][4].type != 'k':
+        return False
+    
     #assuming no checks
     move = False
     if  board[i_loc][6] == '  ' and board[i_loc][5] == '  ' and piece.move0:
@@ -138,6 +142,9 @@ def queen_side_castling(board, piece):
         i_loc = 0
     else:
         i_loc = 7
+
+    if type(board[i_loc][4]) == str or board[i_loc][4].type != 'k':
+        return False
 
     move = False
     if board[i_loc][3] ==  board[i_loc][2] == board[i_loc][1] == '  ' and piece.move0:
@@ -164,7 +171,7 @@ def check_filter(board, moves, king_location_index, location_index, team):
         else:
             pawn_transform_piece = False
 
-        sudo_move = make_move(board_copy, location_index, move.location_index, move, pawn_transform_piece)
+        sudo_move = make_move(board_copy, move, pawn_transform_piece)
         
         if king_location_index == location_index:
             post_move_checker = check_checker(sudo_move, move.location_index)

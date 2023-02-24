@@ -8,7 +8,6 @@ from game_objects.board import starting_board
 from game_objects.pieces import Piece, wb, bb, wq, bq, wr, br, wkn, bkn 
 import random
 
-
 #firstly I need to make the ability for the bot to mkae a move possible
 def all_potential_moves(board, team):
     coords = []
@@ -87,29 +86,6 @@ def point_type(piece_type):
     else:
         return None
 
-#if team == 'w' this will return the score of whites pieces compared to blacks pieces and vice versa
-def game_scoring(board, team):
-    white_pieces = []
-    black_pieces = []
-    for i1 in range(len(board)):
-        for j1 in range(len(board)):
-            if type(board[i1][j1]) != str:
-                if board[i1].team == 'w':
-                    white_pieces.append(board[i1][j1])
-                else:
-                    black_pieces.append(board[i1][j1])
-    
-    total_points = sum(
-        [
-        point_type(w_piece.type) for w_piece in white_pieces if point_type(w_piece.type)
-        ] - 
-        [
-            point_type(b_piece.type) for b_piece in black_pieces if point_type(b_piece.type)
-        ]
-    )
-    if team == 'b':
-        total_points = - total_points
-
 def checkmate_checker(all_moves, check):
     if check and all_moves == []:
         return True
@@ -142,8 +118,34 @@ def endgame_checkers(board, kill, team):
         return 'continue'
 
     # if there is less than 5 pieces on the board and is losing then assume a stalemate to be equivalent to a win
-     
 
+#if team == 'w' this will return the score of whites pieces compared to blacks pieces and vice versa
+def game_scoring(board, team):
+    all_moves = all_potential_moves(board, team)
+    king_coords = king_find(board, team)
+    check = check_checker(board, king_coords)
 
+    if checkmate_checker(all_moves, check):
+        return -1000
 
+    white_pieces = []
+    black_pieces = []
+    for i1 in range(len(board)):
+        for j1 in range(len(board)):
+            if type(board[i1][j1]) != str:
+                if board[i1][j1].team == 'w':
+                    white_pieces.append(board[i1][j1])
+                else:
+                    black_pieces.append(board[i1][j1])
+    
+    w_points = [point_type(w_piece.type) for w_piece in white_pieces if point_type(w_piece.type) != None]
+    b_points = [point_type(b_piece.type) for b_piece in black_pieces if point_type(b_piece.type) != None]
+    total_points = sum(w_points) - sum(b_points)
+    if team == 'b':
+        total_points = - total_points
+    
+    #stalemate = stale_mate_checker(all_moves, check)
 
+    #if total_points > 0 and stalemate:
+    #    return -500
+    return total_points
