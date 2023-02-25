@@ -83,6 +83,7 @@ def engine_move(board, TEAM, half_move_count, move_count):
 
     return ai_move
 
+#this uses the stockfish engine downloaded online to find the best move
 def engine_move1(board, TEAM, half_move_count, move_count):
     stockfish = Stockfish(path = '/opt/homebrew/Cellar/stockfish/15.1/bin/stockfish')
 
@@ -104,5 +105,3 @@ def engine_move1(board, TEAM, half_move_count, move_count):
 
     else:
         return 'non valid FEN'
-
-
