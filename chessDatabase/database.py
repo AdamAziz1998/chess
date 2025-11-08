@@ -9,7 +9,6 @@ DB_SETTINGS = {
     "port": "5432"
 }
 
-
 class Database:
     def __init__(self, settings=DB_SETTINGS):
         self.conn = psycopg2.connect(**settings)
@@ -130,7 +129,7 @@ class Database:
         self.cur.execute("""
             SELECT 
                 m.move,
-                COUNT(m.id) AS times_played,
+                (SUM(m.white) + SUM(m.black) + SUM(m.draw)) AS times_played,
                 SUM(m.white) AS total_white_wins,
                 SUM(m.black) AS total_black_wins,
                 SUM(m.draw)  AS total_draws
@@ -141,6 +140,29 @@ class Database:
             ORDER BY times_played DESC;
         """, (fen,))
         return self.cur.fetchall()
+    
+    def get_most_popular_move(self, fen: str):
+        """
+        Returns the full data row for the most popular move
+        from a given FEN position using a LIMIT 1 query.
+        """
+        self.cur.execute("""
+            SELECT 
+                m.move,
+                (SUM(m.white) + SUM(m.black) + SUM(m.draw)) AS times_played,
+                SUM(m.white) AS total_white_wins,
+                SUM(m.black) AS total_black_wins,
+                SUM(m.draw)  AS total_draws
+            FROM Move m
+            JOIN Position p ON p.id = m.fen_id
+            WHERE p.fen_position = %s
+            GROUP BY m.move
+            ORDER BY times_played DESC
+            LIMIT 1;
+        """, (fen,))
+        
+        # fetchone() returns the single row or None if no rows were found
+        return self.cur.fetchone()
 
     def delete_move(self, move_id: int):
         self.cur.execute("DELETE FROM Move WHERE id = %s;", (move_id,))

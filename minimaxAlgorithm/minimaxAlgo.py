@@ -76,7 +76,7 @@ def minimax(board: chess.Board, depth: int, alpha: int, beta: int, maximizing: b
         return min_eval
 
 # Get best move for a position
-def find_best_move(fen: str, depth: int = MAX_DEPTH) -> chess.Move:
+def minimax_best_move(fen: str, depth: int = MAX_DEPTH) -> chess.Move:
     board = chess.Board(fen)
     best_move = None
     best_eval = -math.inf if board.turn == chess.WHITE else math.inf
@@ -95,10 +95,4 @@ def find_best_move(fen: str, depth: int = MAX_DEPTH) -> chess.Move:
                 best_eval = eval
                 best_move = move
 
-    return best_move
-
-# Example usage
-if __name__ == "__main__":
-    fen = chess.STARTING_FEN
-    move = find_best_move(fen, depth=4)
-    print("Best move:", move)
+    return best_move, best_eval

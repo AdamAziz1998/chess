@@ -88,7 +88,6 @@ def transform_game(movetext: str) -> Tuple[list[str], str]:
 # Main Processing
 # ---------------------------
 
-@profile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -164,7 +163,7 @@ def main():
                     logger.error(f"Error processing game {game_index}: {e}", exc_info=True)
                     db.rollback()
                 
-                if game_index == 100:
+                if game_index == 1000:
                     break
 
     logger.info(f"Finished processing {game_index} games")

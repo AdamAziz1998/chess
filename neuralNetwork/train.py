@@ -1,19 +1,16 @@
-#!/usr/bin/env python3
-import sys
-import os
 import argparse
-import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
+from tqdm import tqdm
 from dataset import ChessMemmapDataset
 from model import ChessModel
 
 def train_one_epoch(model, dataloader, criterion, optimizer, device):
     model.train()
     total_loss, total_correct, total_samples = 0, 0, 0
-    for x, y in dataloader:
+    for x, y in tqdm(dataloader, desc="Training", leave=False):
         x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
         logits = model(x)
@@ -57,6 +54,7 @@ def main():
     print("Using device:", device)
 
     # Load dataset
+    print("Loading dataset")
     full_ds = ChessMemmapDataset(args.meta)
     n_total = len(full_ds)
     n_val = int(args.val_split * n_total)
@@ -69,6 +67,7 @@ def main():
                             shuffle=False, num_workers=args.num_workers)
 
     # Load model
+    print("Loading model")
     num_classes = full_ds.meta["num_classes"]
     model = ChessModel(num_classes=num_classes).to(device)
 
@@ -77,6 +76,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     # Training loop
+    print("Begin model training")
     for epoch in range(1, args.epochs + 1):
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_acc = evaluate(model, val_loader, criterion, device)
