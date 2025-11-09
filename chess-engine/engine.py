@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import psycopg2
 from minimaxAlgorithm.minimaxAlgo import minimax_best_move
 from neuralNetwork.infer import neural_network_best_move
@@ -62,7 +66,7 @@ def should_use_minimax(score, threshold: int = 150) -> bool | str:
 def best_move(fen: str):
     try:
         with Database() as db:
-            chess_database_move = db.get_most_popular_move(fen)
+            chess_database_move = db.get_most_popular_move(fen)['move']
     except psycopg2.OperationalError as e:
         print(f"\nDATABASE CONNECTION FAILED:")
         print(f"Please check your DB_SETTINGS in db_manager.py")
@@ -82,4 +86,4 @@ def best_move(fen: str):
 
 if __name__ == "__main__":
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    best_move(fen)
+    print(best_move(fen))
