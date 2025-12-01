@@ -1,1 +1,0 @@
-{"n_samples": 8272442, "x_path": "neuralNetwork/processed/X.dat", "y_path": "neuralNetwork/processed/y.dat", "dtype_x": "uint8", "dtype_y": "int32", "shape_x": [8272442, 13, 8, 8], "shape_y": [8272442], "num_classes": 20480}

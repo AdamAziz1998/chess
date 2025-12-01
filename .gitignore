@@ -1,4 +1,4 @@
 *.csv
 *.pt
 *.dat
-chessDatabase/data/
+setup/chessDatabase/data/
