@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import psycopg2
-from minimaxAlgorithm.minimaxAlgo import minimax_best_move
+from setup.minimax.minimax import MiniMaxEngine
 from neuralNetwork.infer import neural_network_best_move
 import chess
 from chessDatabase.database import Database

@@ -163,7 +163,8 @@ def main():
                     logger.error(f"Error processing game {game_index}: {e}", exc_info=True)
                     db.rollback()
                 
-                if game_index == 1000:
+                # TODO: In deployment dont have this line
+                if game_index == 1000: 
                     break
 
     logger.info(f"Finished processing {game_index} games")

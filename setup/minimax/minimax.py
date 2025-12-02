@@ -2,7 +2,7 @@ import chess
 import math
 from typing import Optional, Tuple
 
-class ChessEngine:
+class MiniMaxEngine:
     """
     A simple chess engine implementing Minimax with Alpha-Beta pruning,
     Quiescence search, and basic Adaptive Deepening.
