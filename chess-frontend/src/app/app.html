@@ -1,0 +1,87 @@
+<main class="min-h-screen w-full bg-neutral-950 text-gray-200 flex flex-col font-sans">
+  <div class="flex flex-row flex-grow gap-8 w-full">
+    <div class="w-full flex flex-col items-center py-4">
+      <header class="mb-6 w-full md:w-3/4 px-10">
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white">Angular Chess</h1>
+        <p class="text-gray-400 mt-2">Explore historical moves or play against a friend or AI.</p>
+      </header>
+      <!-- Chessboard Section -->
+      <div class="w-full md:w-3/4 flex justify-center items-center">
+        <div id="myBoard" class="w-full aspect-square shadow-2xl mx-10"></div>
+      </div>
+    </div>
+    <!-- Controls and Info Panel -->
+    <div class="md:w-1/3 lg:w-2/5 bg-neutral-900 p-6 rounded-lg shadow-lg">
+      <!-- Mode Toggles -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-3">Game Mode</h2>
+        <div class="flex gap-2">
+          <button (click)="setGameMode('play')"
+                  [class]="gameMode() === 'play' ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'"
+                  class="flex-1 py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            Play
+          </button>
+          <button (click)="setGameMode('explore')"
+                  [class]="gameMode() === 'explore' ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'"
+                  class="flex-1 py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            Explore
+          </button>
+        </div>
+      </div>
+
+      <!-- Conditional Panels -->
+      @if (gameMode() === 'play') {
+        <div class="animate-fade-in">
+          <h3 class="text-xl font-semibold mb-3">Play Mode</h3>
+          <div class="flex flex-col gap-2">
+            <button (click)="setPlayMode('pvp')"
+                    [class]="playMode() === 'pvp' ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600'"
+                    class="w-full py-2 px-4 rounded-md transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-green-500">
+              Player vs Player
+            </button>
+            <button (click)="setPlayMode('ai-white')"
+                    [class]="playMode() === 'ai-white' ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600'"
+                    class="w-full py-2 px-4 rounded-md transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-green-500">
+              Play as White (vs AI)
+            </button>
+            <button (click)="setPlayMode('ai-black')"
+                    [class]="playMode() === 'ai-black' ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600'"
+                    class="w-full py-2 px-4 rounded-md transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-green-500">
+              Play as Black (vs AI)
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="animate-fade-in">
+          <h3 class="text-xl font-semibold mb-3">Historical Moves</h3>
+          <p class="text-sm text-gray-400 mb-3">Mock data based on current position. Click a move to play it.</p>
+          @if (historicalMoves().length > 0) {
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              @for (move of historicalMoves(); track move) {
+                <button (click)="onHistoricalMoveClick(move)"
+                        class="bg-gray-700 hover:bg-gray-600 py-2 px-3 rounded-md transition-colors duration-200 text-center focus:outline-none focus:ring-2 focus:ring-gray-500">
+                  {{ move }}
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="text-gray-500 italic">No legal mock moves from this position.</p>
+          }
+        </div>
+      }
+
+      <!-- Status Display -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold border-b-2 border-gray-600 pb-2 mb-3">Game Status</h2>
+        <p class="text-lg text-yellow-300 min-h-[28px]">{{ gameStatus() }}</p>
+      </div>
+
+      <!-- Reset Button -->
+      <div class="mt-8 border-t-2 border-gray-600 pt-6">
+        <button (click)="resetGame()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+          Reset Game
+        </button>
+      </div>
+    </div>
+  </div>
+</main>

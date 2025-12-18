@@ -3,7 +3,7 @@ import re
 import argparse
 import chess
 import logging
-from typing import Tuple, Optional
+from typing import Tuple
 from tqdm import tqdm
 
 from database import Database
@@ -143,13 +143,13 @@ def main():
                         
 
                         # Current position before move
-                        pre_position_id = db.get_position_id(board.fen())
+                        pre_position_id = db.get_position_id(board.epd())
 
                         # Make move
                         board.push_san(move_san)
 
                         # New position after move
-                        new_position_id = db.get_position_id(board.fen())
+                        new_position_id = db.get_position_id(board.epd())
 
                         # Outcome flags
                         white_result = 1 if result == "1-0" else 0

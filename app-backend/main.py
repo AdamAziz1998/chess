@@ -1,7 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
+
 from . import models, schemas, crud, database
+from .minimax.minimax import MiniMaxEngine
 
 # Create tables on startup (For dev only - use Alembic for Prod)
 from contextlib import asynccontextmanager
@@ -42,7 +45,11 @@ async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)
     Search for a given FEN and return stats for all moves from that position.
     """
     # 1. Find the Position
-    stmt = select(models.Position).where(models.Position.fen_position == fen)
+    stmt = (
+        select(models.Position)
+        .options(selectinload(models.Position.moves_from))  # This fetches the moves immediately
+        .where(models.Position.fen_position == fen)
+    )
     result = await db.execute(stmt)
     position = result.scalars().first()
 
@@ -52,7 +59,7 @@ async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)
     # 2. Format response
     # Because we used lazy="selectin" in models.py, accessing .moves is async-safe
     move_stats = []
-    for move in position.moves:
+    for move in position.moves_from:
         move_stats.append({
             "move": move.move,
             "white": move.white,
@@ -104,3 +111,34 @@ async def get_popular_move(fen: str, db: AsyncSession = Depends(database.get_db)
         "draw": best_move.draw,
         "total_games": best_move.white + best_move.black + best_move.draw
     }
+
+
+@app.get("/minimax")
+def calculate_minimax(fen: str, depth: int = 4):
+    """
+    Calculates the best move using the MiniMax engine.
+    Note: This runs synchronously in a thread pool to avoid blocking async DB operations.
+    """
+    # 1. Use the static method from your MiniMaxEngine class
+    best_move_uci, score = MiniMaxEngine.get_best_move_from_fen(fen, depth=depth)
+
+    # 2. Handle invalid FEN
+    if best_move_uci is None and score == 0:
+        raise HTTPException(status_code=400, detail="Invalid FEN string")
+
+    # 3. Determine status based on the engine's return logic
+    status = "active"
+    if best_move_uci is None:
+        # If no move, check the score to see result
+        if abs(score) == MiniMaxEngine.MATE_SCORE:
+            status = "checkmate"
+        elif score == 0:
+            status = "stalemate"
+
+    return {
+        "best_move": best_move_uci,
+        "score": score,
+        "depth": depth,
+        "status": status
+    }
+
