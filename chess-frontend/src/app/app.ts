@@ -21,9 +21,18 @@ export class App implements AfterViewInit{
   private board: any;
   private game: any;
 
-  boardOrientation = computed<'white' | 'black'>(() => {
-    return this.playMode() === 'ai-black' ? 'black' : 'white';
-  });
+  currentOrientation = signal<'white' | 'black'>('white');
+
+  flipBoard(): void {
+    // 1. Update the state signal
+    const newOrientation = this.currentOrientation() === 'white' ? 'black' : 'white';
+    this.currentOrientation.set(newOrientation);
+
+    // 2. Update the physical board if it exists
+    if (this.board) {
+      this.board.orientation(newOrientation);
+    }
+  }
 
     ngAfterViewInit(): void {
       if (isPlatformBrowser(this.platformId)) {
@@ -37,10 +46,17 @@ export class App implements AfterViewInit{
     if (isPlatformBrowser(this.platformId)) {
       this.game = new Chess();
     }
+
+    if (this.playMode() === 'ai-black') {
+      this.currentOrientation.set('black');
+    } else {
+      this.currentOrientation.set('white');
+    }
+
     const config = {
       draggable: true,
       position: 'start',
-      orientation: this.boardOrientation(),
+      orientation: this.currentOrientation(),
       pieceTheme: '/assets/img/chesspieces/wikipedia/{piece}.png',
       onDragStart: this.onDragStart,
       onDrop: this.onDrop,
@@ -131,13 +147,14 @@ export class App implements AfterViewInit{
     const moveColor = this.game.turn() === 'b' ? 'Black' : 'White';
 
     if (this.game.isCheckmate()) {
-      status = `Game over, ${moveColor} is in checkmate.`;
+      const winColor = moveColor.includes('Black') ? 'White' : 'Black';
+      status = `Game over, ${winColor} wins`;
     } else if (this.game.isDraw()) {
-      status = 'Game over, drawn position.';
+      status = 'Game over, stalemate';
     } else {
-      status = `${moveColor} to move.`;
+      status = `${moveColor}'s Turn`;
       if (this.game.inCheck()) {
-        status += ` ${moveColor} is in check.`;
+        status += ` ${moveColor} is in check`;
       }
     }
     this.gameStatus.set(status);
