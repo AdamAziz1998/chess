@@ -1,5 +1,5 @@
-import {AfterViewInit, Component, computed, Inject, PLATFORM_ID, signal} from '@angular/core';
-import {isPlatformBrowser} from '@angular/common';
+import {AfterViewInit, Component, computed, Inject, PLATFORM_ID, signal, ViewEncapsulation} from '@angular/core';
+import {isPlatformBrowser, NgOptimizedImage} from '@angular/common';
 import {Chess} from 'chess.js';
 
 declare var Chessboard: any;
@@ -10,13 +10,19 @@ type PlayMode = 'pvp' | 'ai-white' | 'ai-black';
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [
+    NgOptimizedImage
+  ],
+  styleUrl: './app.css',
+  encapsulation: ViewEncapsulation.None
 })
 export class App implements AfterViewInit{
   gameMode = signal<GameMode>('play');
   playMode = signal<PlayMode>('pvp');
-  gameStatus = signal<string>('White to move.');
+  gameStatus = signal<string>('White to move');
   historicalMoves = signal<string[]>([]);
+  capturedPieces = signal<{color: string, type: string}[]>([]);
+  private pendingSource: string | null = null;
 
   private board: any;
   private game: any;
@@ -24,11 +30,9 @@ export class App implements AfterViewInit{
   currentOrientation = signal<'white' | 'black'>('white');
 
   flipBoard(): void {
-    // 1. Update the state signal
     const newOrientation = this.currentOrientation() === 'white' ? 'black' : 'white';
     this.currentOrientation.set(newOrientation);
 
-    // 2. Update the physical board if it exists
     if (this.board) {
       this.board.orientation(newOrientation);
     }
@@ -60,6 +64,7 @@ export class App implements AfterViewInit{
       pieceTheme: '/assets/img/chesspieces/wikipedia/{piece}.png',
       onDragStart: this.onDragStart,
       onDrop: this.onDrop,
+      onSquareClick: this.onSquareClick,
       onSnapEnd: () => {
         if (this.board) {
           this.board.position(this.game.fen());
@@ -101,18 +106,24 @@ export class App implements AfterViewInit{
   };
 
   onDrop = (source: string, target: string): string | void => {
+    if (source === target) {
+      this.onSquareClick(source);
+      return;
+    }
     try {
       const move = this.game.move({
         from: source,
         to: target,
         promotion: 'q'
       });
-
-      if (move === null) {
-        return 'snapback';
+      if (move === null) return 'snapback';
+      if (move.captured) {
+        this.addCapturedPiece(move.color === 'w' ? 'b' : 'w', move.captured);
       }
 
       this.updateStatus();
+      this.removeHighlights();
+      this.pendingSource = null;
 
       if(this.gameMode() === 'explore') {
         this.fetchHistoricalMoves(this.game.fen());
@@ -122,8 +133,56 @@ export class App implements AfterViewInit{
         }
       }
     } catch (e) {
-      console.error("Error on drop:", e);
       return 'snapback';
+    }
+  };
+
+  onSquareClick = (square: string): void => {
+    if (this.game.isGameOver()) return;
+
+    const piece = this.game.get(square);
+    const isWhiteTurn = this.game.turn() === 'w';
+    const isFriendlyPiece = piece && ((isWhiteTurn && piece.color === 'w') || (!isWhiteTurn && piece.color === 'b'));
+
+    if (isFriendlyPiece) {
+      if (this.pendingSource === square) {
+        this.pendingSource = null;
+        this.removeHighlights();
+        return;
+      }
+
+      if (this.isAiTurn()) return;
+
+      this.removeHighlights();
+
+      this.pendingSource = square;
+      this.showLegalMoves(square);
+      return;
+    }
+
+    if (this.pendingSource) {
+      const move = this.game.move({
+        from: this.pendingSource,
+        to: square,
+        promotion: 'q'
+      });
+
+      if (move) {
+        this.board.position(this.game.fen());
+        this.updateStatus();
+        if (move.captured) {
+          this.addCapturedPiece(move.color === 'w' ? 'b' : 'w', move.captured);
+        }
+        this.pendingSource = null;
+        this.removeHighlights();
+
+        if (!this.game.isGameOver() && this.isAiTurn()) {
+          setTimeout(() => this.makeAiMove(), 250);
+        }
+      } else {
+        this.pendingSource = null;
+        this.removeHighlights();
+      }
     }
   };
 
@@ -137,7 +196,12 @@ export class App implements AfterViewInit{
 
     const moves = this.game.moves();
     const randomMove = moves[Math.floor(Math.random() * moves.length)];
-    this.game.move(randomMove);
+    const moveResult = this.game.move(randomMove);
+
+    if (moveResult.captured) {
+      this.addCapturedPiece(moveResult.color === 'w' ? 'b' : 'w', moveResult.captured);
+    }
+
     this.board.position(this.game.fen());
     this.updateStatus();
   }
@@ -148,13 +212,13 @@ export class App implements AfterViewInit{
 
     if (this.game.isCheckmate()) {
       const winColor = moveColor.includes('Black') ? 'White' : 'Black';
-      status = `Game over, ${winColor} wins`;
+      status = `Checkmate, ${winColor} wins`;
     } else if (this.game.isDraw()) {
       status = 'Game over, stalemate';
     } else {
-      status = `${moveColor}'s Turn`;
+      status = `${moveColor} to move`;
       if (this.game.inCheck()) {
-        status += ` ${moveColor} is in check`;
+        status = `${moveColor} is in check`;
       }
     }
     this.gameStatus.set(status);
@@ -177,7 +241,12 @@ export class App implements AfterViewInit{
     this.resetGame();
   }
 
+  private addCapturedPiece(color: string, type: string): void {
+    this.capturedPieces.update(prev => [...prev, { color, type }]);
+  }
+
   resetGame(): void {
+    this.capturedPieces.set([]);
     if (this.board) {
       this.board.destroy();
     }
@@ -186,7 +255,6 @@ export class App implements AfterViewInit{
 
   private fetchHistoricalMoves(fen: string): void {
     console.log("Fetching historical moves for FEN:", fen);
-    // This is a mock implementation as requested.
     const dummyMoves = ['e4', 'd4', 'Nf3', 'c4', 'g3', 'f4'];
     this.historicalMoves.set(dummyMoves.filter(move => this.game.move(move, {dry_run: true})));
   }
@@ -200,5 +268,36 @@ export class App implements AfterViewInit{
       this.updateStatus();
       this.fetchHistoricalMoves(this.game.fen());
     }
+  }
+
+  private removeHighlights(): void {
+    const boardEl = document.getElementById('myBoard');
+    if (boardEl) {
+      boardEl.querySelectorAll('.square-55d63').forEach(el => {
+        el.classList.remove('highlight-selected', 'highlight-move');
+      });
+    }
+  }
+
+  private addHighlight(square: string, type: 'selected' | 'move'): void {
+    const squareEl = document.querySelector(`#myBoard .square-${square}`);
+    if (squareEl) {
+      squareEl.classList.add(type === 'selected' ? 'highlight-selected' : 'highlight-move');
+    }
+  }
+
+  private showLegalMoves(square: string): void {
+    const moves = this.game.moves({
+      square: square,
+      verbose: true
+    });
+
+    if (moves.length === 0) return;
+
+    this.addHighlight(square, 'selected');
+
+    moves.forEach((move: any) => {
+      this.addHighlight(move.to, 'move');
+    });
   }
 }
