@@ -6,13 +6,23 @@
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* The yellow highlight for the selected piece */
 .highlight-selected {
-  box-shadow: inset 0 0 3px 3px yellow;
+  background-color: rgb(220, 220, 0);
 }
 
-/* The grey dots (or circles) for available moves */
 .highlight-move {
-  box-shadow: inset 0 0 3px 3px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.highlight-move::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%;
+  height: 30%;
   border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
 }
