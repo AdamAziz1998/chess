@@ -16,7 +16,7 @@ type PlayMode = 'pvp' | 'ai-white' | 'ai-black';
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None
 })
-export class App implements AfterViewInit{
+export class App implements AfterViewInit {
   gameMode = signal<GameMode>('play');
   playMode = signal<PlayMode>('pvp');
   gameStatus = signal<string>('White to move');
@@ -26,6 +26,8 @@ export class App implements AfterViewInit{
 
   private board: any;
   private game: any;
+
+  private squareHover: string | null = null;
 
   currentOrientation = signal<'white' | 'black'>('white');
 
@@ -38,8 +40,8 @@ export class App implements AfterViewInit{
     }
   }
 
-    ngAfterViewInit(): void {
-      if (isPlatformBrowser(this.platformId)) {
+  ngAfterViewInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => this.initializeGame(), 500);
     }
   }
@@ -64,7 +66,7 @@ export class App implements AfterViewInit{
       pieceTheme: '/assets/img/chesspieces/wikipedia/{piece}.png',
       onDragStart: this.onDragStart,
       onDrop: this.onDrop,
-      onSquareClick: this.onSquareClick,
+      onMouseoverSquare: this.onMouseoverSquare,
       onSnapEnd: () => {
         if (this.board) {
           this.board.position(this.game.fen());
@@ -107,7 +109,7 @@ export class App implements AfterViewInit{
 
   onDrop = (source: string, target: string): string | void => {
     if (source === target) {
-      this.onSquareClick(source);
+      this.onBoardClick();
       return;
     }
     try {
@@ -137,12 +139,20 @@ export class App implements AfterViewInit{
     }
   };
 
-  onSquareClick = (square: string): void => {
-    if (this.game.isGameOver()) return;
+  onMouseoverSquare = (square: string, piece: string) => {
+    this.squareHover = square;
+  };
 
+  onBoardClick = (): void => {
+    console.log('onMouseOverSquare', this.squareHover);
+
+    if (this.game.isGameOver()) return;
+    if (!this.squareHover) return;
+
+    const square = this.squareHover;
     const piece = this.game.get(square);
     const isWhiteTurn = this.game.turn() === 'w';
-    const isFriendlyPiece = piece && ((isWhiteTurn && piece.color === 'w') || (!isWhiteTurn && piece.color === 'b'));
+    const isFriendlyPiece: boolean = piece && ((isWhiteTurn && piece.color === 'w') || (!isWhiteTurn && piece.color === 'b'));
 
     if (isFriendlyPiece) {
       if (this.pendingSource === square) {
