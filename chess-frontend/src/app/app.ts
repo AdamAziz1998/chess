@@ -22,11 +22,12 @@ export class App implements AfterViewInit {
   gameStatus = signal<string>('White to move');
   historicalMoves = signal<string[]>([]);
   capturedPieces = signal<{color: string, type: string}[]>([]);
-  private pendingSource: string | null = null;
+  showPromotionModal = signal<boolean>(false);
+  promotionPendingMove = signal<{source: string, target: string, color: string} | null>(null);
 
+  private pendingSource: string | null = null;
   private board: any;
   private game: any;
-
   private squareHover: string | null = null;
 
   currentOrientation = signal<'white' | 'black'>('white');
@@ -68,6 +69,7 @@ export class App implements AfterViewInit {
       onDrop: this.onDrop,
       onMouseoverSquare: this.onMouseoverSquare,
       onSnapEnd: () => {
+        if (this.showPromotionModal()) return;
         if (this.board) {
           this.board.position(this.game.fen());
         }
@@ -107,11 +109,36 @@ export class App implements AfterViewInit {
     return true;
   };
 
+  private isPromotion(source: string, target: string): boolean {
+    const piece = this.game.get(source);
+    if (piece?.type !== 'p') return false;
+    if (piece.color !== this.game.turn()) return false;
+
+    const sourceRank = source[1];
+    const targetRank = target[1];
+
+    if (piece.color === 'w' && sourceRank === '7' && targetRank === '8') return true;
+    return piece.color === 'b' && sourceRank === '2' && targetRank === '1';
+  }
+
   onDrop = (source: string, target: string): string | void => {
     if (source === target) {
       this.onBoardClick();
       return;
     }
+
+    if (this.isPromotion(source, target)) {
+      const legalMove = this.game.move({ from: source, to: target, promotion: 'q' });
+      if (legalMove) {
+        this.game.undo();
+        this.promotionPendingMove.set({ source, target, color: this.game.turn() });
+        this.showPromotionModal.set(true);
+        return;
+      } else {
+        return 'snapback';
+      }
+    }
+
     try {
       const move = this.game.move({
         from: source,
@@ -119,21 +146,7 @@ export class App implements AfterViewInit {
         promotion: 'q'
       });
       if (move === null) return 'snapback';
-      if (move.captured) {
-        this.addCapturedPiece(move.color === 'w' ? 'b' : 'w', move.captured);
-      }
-
-      this.updateStatus();
-      this.removeHighlights();
-      this.pendingSource = null;
-
-      if(this.gameMode() === 'explore') {
-        this.fetchHistoricalMoves(this.game.fen());
-      } else {
-        if (!this.game.isGameOver() && this.isAiTurn()) {
-          setTimeout(() => this.makeAiMove(), 250);
-        }
-      }
+      this.finalizeMoveLogic(move);
     } catch (e) {
       return 'snapback';
     }
@@ -144,8 +157,6 @@ export class App implements AfterViewInit {
   };
 
   onBoardClick = (): void => {
-    console.log('onMouseOverSquare', this.squareHover);
-
     if (this.game.isGameOver()) return;
     if (!this.squareHover) return;
 
@@ -171,6 +182,19 @@ export class App implements AfterViewInit {
     }
 
     if (this.pendingSource) {
+      if (this.isPromotion(this.pendingSource, square)) {
+        const legalMove = this.game.move({ from: this.pendingSource, to: square, promotion: 'q' });
+        if (legalMove) {
+          this.game.undo();
+          this.promotionPendingMove.set({ source: this.pendingSource, target: square, color: this.game.turn() });
+          this.showPromotionModal.set(true);
+        } else {
+          this.pendingSource = null;
+          this.removeHighlights();
+        }
+        return;
+      }
+
       const move = this.game.move({
         from: this.pendingSource,
         to: square,
@@ -179,22 +203,59 @@ export class App implements AfterViewInit {
 
       if (move) {
         this.board.position(this.game.fen());
-        this.updateStatus();
-        if (move.captured) {
-          this.addCapturedPiece(move.color === 'w' ? 'b' : 'w', move.captured);
-        }
-        this.pendingSource = null;
-        this.removeHighlights();
-
-        if (!this.game.isGameOver() && this.isAiTurn()) {
-          setTimeout(() => this.makeAiMove(), 250);
-        }
+        this.finalizeMoveLogic(move);
       } else {
         this.pendingSource = null;
         this.removeHighlights();
       }
     }
   };
+
+  promoteTo(type: string): void {
+    const pending = this.promotionPendingMove();
+    if (!pending) return;
+
+    const move = this.game.move({
+      from: pending.source,
+      to: pending.target,
+      promotion: type
+    });
+
+    if (move) {
+      this.board.position(this.game.fen());
+      this.finalizeMoveLogic(move);
+    }
+
+    // Cleanup
+    this.showPromotionModal.set(false);
+    this.promotionPendingMove.set(null);
+  }
+
+  cancelPromotion(): void {
+    this.showPromotionModal.set(false);
+    this.promotionPendingMove.set(null);
+    this.board.position(this.game.fen()); // Snap back
+    this.pendingSource = null;
+    this.removeHighlights();
+  }
+
+  private finalizeMoveLogic(move: any): void {
+    if (move.captured) {
+      this.addCapturedPiece(move.color === 'w' ? 'b' : 'w', move.captured);
+    }
+
+    this.updateStatus();
+    this.removeHighlights();
+    this.pendingSource = null;
+
+    if(this.gameMode() === 'explore') {
+      this.fetchHistoricalMoves(this.game.fen());
+    } else {
+      if (!this.game.isGameOver() && this.isAiTurn()) {
+        setTimeout(() => this.makeAiMove(), 250);
+      }
+    }
+  }
 
   private isAiTurn(): boolean {
     return (this.playMode() === 'ai-white' && this.game.turn() === 'b') ||

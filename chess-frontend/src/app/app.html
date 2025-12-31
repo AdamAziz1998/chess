@@ -6,16 +6,38 @@
         <p class="text-gray-400 mt-2">Explore historical moves or play against a friend or AI.</p>
       </header>
 
-      <!-- Chessboard Section -->
       <div class="w-full md:w-3/4 flex justify-center items-center">
         <div id="myBoard" (click)="onBoardClick()" class="w-full aspect-square shadow-2xl mx-10"></div>
+
+        @if (showPromotionModal()) {
+          <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/50 rounded backdrop-blur-sm animate-fade-in">
+            <div class="bg-neutral-800 p-4 rounded-xl shadow-2xl border border-neutral-700">
+              <h3 class="text-center text-white font-medium mb-4">Promote to</h3>
+              <div class="flex gap-4">
+                <button (click)="promoteTo('q')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
+                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'Q.png'" width="60" height="60" alt="Queen" class="group-hover:scale-110 transition-transform"/>
+                </button>
+                <button (click)="promoteTo('r')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
+                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'R.png'" width="60" height="60" alt="Rook" class="group-hover:scale-110 transition-transform"/>
+                </button>
+                <button (click)="promoteTo('b')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
+                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'B.png'" width="60" height="60" alt="Bishop" class="group-hover:scale-110 transition-transform"/>
+                </button>
+                <button (click)="promoteTo('n')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
+                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'N.png'" width="60" height="60" alt="Knight" class="group-hover:scale-110 transition-transform"/>
+                </button>
+              </div>
+              <button (click)="cancelPromotion()" class="mt-4 w-full py-2 text-sm text-gray-400 hover:text-white hover:underline">
+                Cancel
+              </button>
+            </div>
+          </div>
+        }
       </div>
     </div>
 
-    <!-- Controls and Info Panel -->
     <div class="md:w-1/3 lg:w-2/5 bg-neutral-900 pt-6 flex flex-col justify-between">
       <div class="px-8">
-        <!-- Mode Toggles -->
         <div class="mb-6">
           <div class="relative flex bg-neutral-950 rounded-md p-1">
             <div
@@ -37,7 +59,6 @@
           </div>
         </div>
 
-        <!-- Conditional Panels -->
         @if (gameMode() === 'play') {
           <div class="animate-fade-in mb-4">
             <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Game Mode</h3>
@@ -78,7 +99,6 @@
           </div>
         }
 
-        <!-- Status Display -->
         <div class="mb-6 border-t border-neutral-800">
           <h2 class="uppercase tracking-widest font-medium text-neutral-500 my-4">Status</h2>
           <div class="flex flex-row items-center gap-3 border border-neutral-800 bg-neutral-800/50 p-4 rounded-lg">
@@ -87,26 +107,27 @@
             </div>
             <div>{{ gameStatus() }}</div>
           </div>
-          <div class="flex flex-row pt-5">
-            <div class="text-s text-neutral-500 w-5 text-center">W</div>
-            @for (piece of capturedPieces(); track piece) {
-              @if (piece.color == "w") {
-                <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Black Pawn"/>
+          @if (gameMode() === 'play') {
+            <div class="flex flex-row pt-5">
+              <div class="text-s text-neutral-500 w-5 text-center">W</div>
+              @for (piece of capturedPieces(); track piece) {
+                @if (piece.color == "w") {
+                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
+                }
               }
-            }
-          </div>
-          <div class="flex flex-row">
-            <div class="text-s text-neutral-500 w-5 text-center">B</div>
-            @for (piece of capturedPieces(); track piece) {
-              @if (piece.color == "b") {
-                <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Black Pawn"/>
+            </div>
+            <div class="flex flex-row">
+              <div class="text-s text-neutral-500 w-5 text-center">B</div>
+              @for (piece of capturedPieces(); track piece) {
+                @if (piece.color == "b") {
+                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
+                }
               }
-            }
-          </div>
+            </div>
+          }
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="p-6 border-t border-neutral-800 bg-neutral-900">
         <div class="grid grid-cols-2 gap-3">
           <button (click)="flipBoard()" class="flex justify-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-medium transition-all">
