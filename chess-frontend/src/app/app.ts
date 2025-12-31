@@ -2,18 +2,17 @@ import {AfterViewInit, Component, computed, Inject, PLATFORM_ID, signal, ViewEnc
 import {isPlatformBrowser, NgOptimizedImage} from '@angular/common';
 import {Chess} from 'chess.js';
 import {PromotionModal} from './components/promotion-modal/promotion-modal';
+import {GameMode, PlayMode} from './common/types';
+import {Sidebar} from './components/sidebar/sidebar';
 
 declare var Chessboard: any;
-
-type GameMode = 'explore' | 'play';
-type PlayMode = 'pvp' | 'ai-white' | 'ai-black';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   imports: [
-    NgOptimizedImage,
-    PromotionModal
+    PromotionModal,
+    Sidebar
   ],
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None

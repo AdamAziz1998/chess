@@ -1,0 +1,110 @@
+<div class="h-full bg-neutral-900 pt-6 flex flex-col justify-between">
+  <div class="px-8">
+    <div class="mb-6">
+      <div class="relative flex bg-neutral-950 rounded-md p-1">
+        <div
+          class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-neutral-800 rounded-md transition-transform duration-300 ease-in-out"
+          [style.transform]="gameMode() === 'explore' ? 'translateX(100%)' : 'translateX(0%)'">
+        </div>
+        <button (click)="gameModeChange.emit('play')"
+                class="relative z-10 flex-1 py-1 px-4 rounded-md transition-colors duration-300"
+                [class.text-white]="gameMode() === 'play'"
+                [class.text-gray-400]="gameMode() !== 'play'">
+          Play
+        </button>
+        <button (click)="gameModeChange.emit('explore')"
+                class="relative z-10 flex-1 py-1 px-4 rounded-md transition-colors duration-300"
+                [class.text-white]="gameMode() === 'explore'"
+                [class.text-gray-400]="gameMode() !== 'explore'">
+          Explore
+        </button>
+      </div>
+    </div>
+
+    @if (gameMode() === 'play') {
+      <div class="animate-fade-in mb-4">
+        <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Game Mode</h3>
+        <div class="flex flex-col gap-2">
+          <button (click)="playModeChange.emit('pvp')"
+                  [class]="playMode() === 'pvp' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
+                  class="w-full p-4 rounded-md transition-colors duration-200 text-left">
+            Player vs Player
+          </button>
+          <button (click)="playModeChange.emit('ai-white')"
+                  [class]="playMode() === 'ai-white' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
+                  class="w-full p-4 rounded-md transition-colors duration-200 text-left">
+            Play as White (vs AI)
+          </button>
+          <button (click)="playModeChange.emit('ai-black')"
+                  [class]="playMode() === 'ai-black' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
+                  class="w-full p-4 rounded-md transition-colors duration-200 text-left">
+            Play as Black (vs AI)
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="animate-fade-in">
+        <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Historical Moves</h3>
+        <p class="text-sm text-gray-400 mb-3">Click a move to play it.</p>
+        @if (historicalMoves().length > 0) {
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            @for (move of historicalMoves(); track move) {
+              <button (click)="historicalMoveClicked.emit(move)"
+                      class="bg-gray-700 hover:bg-gray-600 py-2 px-3 rounded-md transition-colors duration-200 text-center focus:outline-none focus:ring-2 focus:ring-gray-500">
+                {{ move }}
+              </button>
+            }
+          </div>
+        } @else {
+          <p class="text-gray-500 italic">No legal mock moves from this position.</p>
+        }
+      </div>
+    }
+
+    <div class="mb-6 border-t border-neutral-800">
+      <h2 class="uppercase tracking-widest font-medium text-neutral-500 my-4">Status</h2>
+      <div class="flex flex-row items-center gap-3 border border-neutral-800 bg-neutral-800/50 p-4 rounded-lg">
+        <div class="bg-neutral-50 w-10">
+          <img ngSrc="assets/img/chesspieces/wikipedia/bP.png" width="40" height="40" alt="Black Pawn"/>
+        </div>
+        <div>{{ gameStatus() }}</div>
+      </div>
+      @if (gameMode() === 'play') {
+        <div class="flex flex-row pt-5">
+          <div class="text-s text-neutral-500 w-5 text-center">W</div>
+          @for (piece of capturedPieces(); track piece) {
+            @if (piece.color == "w") {
+              <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
+            }
+          }
+        </div>
+        <div class="flex flex-row">
+          <div class="text-s text-neutral-500 w-5 text-center">B</div>
+          @for (piece of capturedPieces(); track piece) {
+            @if (piece.color == "b") {
+              <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="p-6 border-t border-neutral-800 bg-neutral-900">
+    <div class="grid grid-cols-2 gap-3">
+      <button (click)="flipBoardClicked.emit()" class="flex justify-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-medium transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" />
+        </svg>
+        Flip Board
+      </button>
+      <button (click)="resetGameClicked.emit()" class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-900/30 bg-red-950/20 hover:bg-red-900/30 text-red-400 hover:text-red-300 text-xs font-medium transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
+        </svg>
+        Reset
+      </button>
+    </div>
+  </div>
+</div>
