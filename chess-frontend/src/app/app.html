@@ -10,28 +10,11 @@
         <div id="myBoard" (click)="onBoardClick()" class="w-full aspect-square shadow-2xl mx-10"></div>
 
         @if (showPromotionModal()) {
-          <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/50 rounded backdrop-blur-sm animate-fade-in">
-            <div class="bg-neutral-800 p-4 rounded-xl shadow-2xl border border-neutral-700">
-              <h3 class="text-center text-white font-medium mb-4">Promote to</h3>
-              <div class="flex gap-4">
-                <button (click)="promoteTo('q')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'Q.png'" width="60" height="60" alt="Queen" class="group-hover:scale-110 transition-transform"/>
-                </button>
-                <button (click)="promoteTo('r')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'R.png'" width="60" height="60" alt="Rook" class="group-hover:scale-110 transition-transform"/>
-                </button>
-                <button (click)="promoteTo('b')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'B.png'" width="60" height="60" alt="Bishop" class="group-hover:scale-110 transition-transform"/>
-                </button>
-                <button (click)="promoteTo('n')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-                  <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + promotionPendingMove()?.color + 'N.png'" width="60" height="60" alt="Knight" class="group-hover:scale-110 transition-transform"/>
-                </button>
-              </div>
-              <button (click)="cancelPromotion()" class="mt-4 w-full py-2 text-sm text-gray-400 hover:text-white hover:underline">
-                Cancel
-              </button>
-            </div>
-          </div>
+          <app-promotion-modal
+            [color]="promotionPendingMove()?.color || 'w'"
+            (onPromote)="promoteTo($event)"
+            (onCancel)="cancelPromotion()">
+          </app-promotion-modal>
         }
       </div>
     </div>

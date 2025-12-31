@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, computed, Inject, PLATFORM_ID, signal, ViewEncapsulation} from '@angular/core';
 import {isPlatformBrowser, NgOptimizedImage} from '@angular/common';
 import {Chess} from 'chess.js';
+import {PromotionModal} from './components/promotion-modal/promotion-modal';
 
 declare var Chessboard: any;
 
@@ -11,7 +12,8 @@ type PlayMode = 'pvp' | 'ai-white' | 'ai-black';
   selector: 'app-root',
   templateUrl: './app.html',
   imports: [
-    NgOptimizedImage
+    NgOptimizedImage,
+    PromotionModal
   ],
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None
@@ -226,7 +228,6 @@ export class App implements AfterViewInit {
       this.finalizeMoveLogic(move);
     }
 
-    // Cleanup
     this.showPromotionModal.set(false);
     this.promotionPendingMove.set(null);
   }
@@ -234,7 +235,7 @@ export class App implements AfterViewInit {
   cancelPromotion(): void {
     this.showPromotionModal.set(false);
     this.promotionPendingMove.set(null);
-    this.board.position(this.game.fen()); // Snap back
+    this.board.position(this.game.fen());
     this.pendingSource = null;
     this.removeHighlights();
   }
