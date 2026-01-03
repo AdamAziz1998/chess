@@ -1,12 +1,12 @@
 import {Component, inject, input, output, signal} from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
+import {NgClass, NgOptimizedImage} from '@angular/common';
 import {GameMode, PlayMode} from '../../common/types';
 import {HistoricalMoveService} from '../../services/historical-move.service';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [NgOptimizedImage],
+  imports: [NgOptimizedImage, NgClass],
   templateUrl: './sidebar.html',
 })
 export class Sidebar {
