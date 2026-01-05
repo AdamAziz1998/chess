@@ -16,6 +16,7 @@ export class Sidebar {
   gameMode = input.required<GameMode>();
   playMode = input.required<PlayMode>();
   gameStatus = input.required<string>();
+  showAll = signal(false);
   historicalMoves = input.required<ChessMove[]>();
   capturedPieces = input.required<{color: string, type: string}[]>();
 
@@ -70,5 +71,9 @@ export class Sidebar {
   onFenInput(event: Event) {
     const input = event.target as HTMLInputElement;
     this.fen.set(input.value);
+  }
+
+  toggleShowAll() {
+    this.showAll.update(v => !v);
   }
 }
