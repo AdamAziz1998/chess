@@ -1,9 +1,19 @@
-import {AfterViewInit, Component, computed, Inject, PLATFORM_ID, signal, ViewEncapsulation} from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  computed,
+  inject,
+  Inject,
+  PLATFORM_ID,
+  signal,
+  ViewEncapsulation
+} from '@angular/core';
 import {isPlatformBrowser, NgOptimizedImage} from '@angular/common';
-import {Chess} from 'chess.js';
+import {Chess, Square} from 'chess.js';
 import {PromotionModal} from './components/promotion-modal/promotion-modal';
-import {GameMode, PlayMode} from './common/types';
+import {ChessMove, GameMode, PlayMode} from './common/types';
 import {Sidebar} from './components/sidebar/sidebar';
+import {HistoricalMoveService} from './services/historical-move.service';
 
 declare var Chessboard: any;
 
@@ -21,14 +31,15 @@ export class App implements AfterViewInit {
   gameMode = signal<GameMode>('play');
   playMode = signal<PlayMode>('pvp');
   gameStatus = signal<string>('White to move');
-  historicalMoves = signal<string[]>([]);
+  historicalMoves = signal<ChessMove[]>([]);
   capturedPieces = signal<{color: string, type: string}[]>([]);
   showPromotionModal = signal<boolean>(false);
   promotionPendingMove = signal<{source: string, target: string, color: string} | null>(null);
 
+  private historicalMoveService = inject(HistoricalMoveService);
   private pendingSource: string | null = null;
   private board: any;
-  private game: any;
+  private game: Chess = new Chess();
   private squareHover: string | null = null;
 
   currentOrientation = signal<'white' | 'black'>('white');
@@ -111,7 +122,7 @@ export class App implements AfterViewInit {
   };
 
   private isPromotion(source: string, target: string): boolean {
-    const piece = this.game.get(source);
+    const piece = this.game.get(source as Square);
     if (piece?.type !== 'p') return false;
     if (piece.color !== this.game.turn()) return false;
 
@@ -162,9 +173,9 @@ export class App implements AfterViewInit {
     if (!this.squareHover) return;
 
     const square = this.squareHover;
-    const piece = this.game.get(square);
+    const piece = this.game.get(square as Square);
     const isWhiteTurn = this.game.turn() === 'w';
-    const isFriendlyPiece: boolean = piece && ((isWhiteTurn && piece.color === 'w') || (!isWhiteTurn && piece.color === 'b'));
+    const isFriendlyPiece: undefined | boolean = piece && ((isWhiteTurn && piece.color === 'w') || (!isWhiteTurn && piece.color === 'b'));
 
     if (isFriendlyPiece) {
       if (this.pendingSource === square) {
@@ -326,11 +337,13 @@ export class App implements AfterViewInit {
 
   private fetchHistoricalMoves(fen: string): void {
     console.log("Fetching historical moves for FEN:", fen);
-    const dummyMoves = ['e4', 'd4', 'Nf3', 'c4', 'g3', 'f4'];
-    this.historicalMoves.set(dummyMoves.filter(move => this.game.move(move, {dry_run: true})));
+    this.historicalMoveService.getMovesFromFen(fen).then((moves) => {
+      this.historicalMoves.set(moves);
+    })
   }
 
   onHistoricalMoveClick(move: string): void {
+    console.log("onHistoricalMoveClick", move);
     if (this.gameMode() !== 'explore' || this.game.isGameOver()) return;
 
     const result = this.game.move(move);
@@ -359,7 +372,7 @@ export class App implements AfterViewInit {
 
   private showLegalMoves(square: string): void {
     const moves = this.game.moves({
-      square: square,
+      square: square as Square,
       verbose: true
     });
 
@@ -370,5 +383,22 @@ export class App implements AfterViewInit {
     moves.forEach((move: any) => {
       this.addHighlight(move.to, 'move');
     });
+  }
+
+  updateBoardFromFen(fen: string): void {
+    try {
+      this.game.load(fen);
+
+      if (this.board) {
+        this.board.position(fen);
+      }
+      this.updateStatus();
+
+      if (this.gameMode() === 'explore') {
+        this.fetchHistoricalMoves(fen);
+      }
+    } catch (e) {
+      console.error("Error updating board from FEN:", e);
+    }
   }
 }

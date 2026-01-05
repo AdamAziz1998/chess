@@ -49,13 +49,14 @@
           [value]="fen()"
           (input)="onFenInput($event)"
           placeholder="e.g., rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-          class="w-full p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 resize-none"
+          class="w-full p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:ring-2 focus:ring-[#b58863] focus:border-[#b58863] outline-none transition-all duration-200 resize-none"
           rows="3"
         ></textarea>
         <button
+          type="button"
           (click)="findMoves()"
           [disabled]="loading()"
-          class="w-full text-center p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors duration-200 disabled:bg-blue-800 disabled:cursor-not-allowed">
+          class="w-full text-center p-3 mt-2 mb-1 bg-[#b58863] text-white rounded-lg hover:bg-[color-mix(in_srgb,#b58863,black_40%)] transition-colors duration-200 disabled:bg-[color-mix(in_srgb,#b58863,white_20%)] disabled:cursor-not-allowed">
           @if(loading()) {
             <div class="flex items-center justify-center gap-2">
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -68,18 +69,17 @@
             <span>Find Moves</span>
           }
         </button>
-        <p class="text-sm text-gray-400 mb-3">Click a move to play it.</p>
         @if (historicalMoves().length > 0) {
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             @for (move of historicalMoves(); track move) {
-              <button (click)="historicalMoveClicked.emit(move)"
+              <button (click)="historicalMoveClicked.emit(move.move)"
                       class="bg-gray-700 hover:bg-gray-600 py-2 px-3 rounded-md transition-colors duration-200 text-center focus:outline-none focus:ring-2 focus:ring-gray-500">
                 {{ move }}
               </button>
             }
           </div>
         } @else {
-          <p class="text-gray-500 italic">No legal mock moves from this position.</p>
+          <p class="font-medium text-neutral-500 text-s text-center my-10">No historical moves found for this position</p>
         }
       </div>
     }

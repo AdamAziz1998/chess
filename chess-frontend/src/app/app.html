@@ -30,7 +30,8 @@
       (playModeChange)="setPlayMode($event)"
       (historicalMoveClicked)="onHistoricalMoveClick($event)"
       (flipBoardClicked)="flipBoard()"
-      (resetGameClicked)="resetGame()">
+      (resetGameClicked)="resetGame()"
+      (fenPositionEntered)="updateBoardFromFen($event)">
     </app-sidebar>
   </div>
 </main>
