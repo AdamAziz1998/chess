@@ -80,7 +80,8 @@
           <div class="flex flex-col gap-2 mt-5 min-h-0"
                [class]="showAll() ? 'flex-1' : ''">
 
-            <div class="flex flex-col gap-2 w-full transition-[height] duration-500 ease-in-out"
+            <div #scrollContainer
+                 class="flex flex-col gap-2 w-full transition-[height] duration-500 ease-in-out"
                  [class]="showAll() ? 'h-[calc(100vh-36rem)] overflow-y-auto custom-scrollbar pr-1' : 'h-50 overflow-hidden shrink-0'">
 
               @for (move of historicalMoves(); track move) {
@@ -92,7 +93,7 @@
             </div>
 
             @if (historicalMoves().length > 5) {
-              <button (click)="toggleShowAll()"
+              <button (click)="toggleShowAll(); scrollContainer.scrollTop = 0"
                       class="text-xs font-medium text-gray-400 hover:text-white underline decoration-gray-500 hover:decoration-white transition-all self-start shrink-0 py-2">
                 {{ showAll() ? 'Show less' : 'Show ' + (historicalMoves().length - 5) + ' more' }}
               </button>
