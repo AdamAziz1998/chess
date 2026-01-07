@@ -1,6 +1,8 @@
-<div class="h-full bg-neutral-900 pt-6 flex flex-col justify-between">
-  <div class="px-8">
-    <div class="mb-6">
+<div class="bg-neutral-900 pt-6 flex flex-col h-screen overflow-hidden">
+
+  <div class="px-8 flex flex-col flex-1 min-h-0">
+
+    <div class="mb-6 shrink-0">
       <div class="relative flex bg-neutral-950 rounded-md p-1">
         <div
           class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-neutral-800 rounded-md transition-transform duration-300 ease-in-out"
@@ -21,61 +23,69 @@
       </div>
     </div>
 
-    @if (gameMode() === 'play') {
-      <div class="animate-fade-in mb-4">
-        <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Game Mode</h3>
-        <div class="flex flex-col gap-2">
-          <button (click)="playModeChange.emit('pvp')"
-                  [class]="playMode() === 'pvp' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
-                  class="w-full p-4 rounded-md transition-colors duration-200 text-left">
-            Player vs Player
-          </button>
-          <button (click)="playModeChange.emit('ai-white')"
-                  [class]="playMode() === 'ai-white' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
-                  class="w-full p-4 rounded-md transition-colors duration-200 text-left">
-            Play as White (vs AI)
-          </button>
-          <button (click)="playModeChange.emit('ai-black')"
-                  [class]="playMode() === 'ai-black' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
-                  class="w-full p-4 rounded-md transition-colors duration-200 text-left">
-            Play as Black (vs AI)
+    <div class="animate-fade-in flex flex-col"
+         [class]="gameMode() === 'explore' ? 'flex-1 min-h-0' : ''">
+
+      @if (gameMode() === 'play') {
+        <div class="mb-4 shrink-0">
+          <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Game Mode</h3>
+          <div class="flex flex-col gap-2">
+            <button (click)="playModeChange.emit('pvp')"
+                    [class]="playMode() === 'pvp' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
+                    class="w-full p-4 rounded-md transition-colors duration-200 text-left">
+              Player vs Player
+            </button>
+            <button (click)="playModeChange.emit('ai-white')"
+                    [class]="playMode() === 'ai-white' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
+                    class="w-full p-4 rounded-md transition-colors duration-200 text-left">
+              Play as White (vs AI)
+            </button>
+            <button (click)="playModeChange.emit('ai-black')"
+                    [class]="playMode() === 'ai-black' ? 'border border-neutral-500/50 bg-neutral-500/10' : 'border border-neutral-800 bg-gray-950/30 hover:border-neutral-700'"
+                    class="w-full p-4 rounded-md transition-colors duration-200 text-left">
+              Play as Black (vs AI)
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="shrink-0">
+          <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Historical Moves</h3>
+          <textarea
+            [value]="fen()"
+            (input)="onFenInput($event)"
+            placeholder="e.g., rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            class="w-full p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:ring-2 focus:ring-[#b58863] focus:border-[#b58863] outline-none transition-all duration-200 resize-none"
+            rows="3"
+          ></textarea>
+          <button
+            type="button"
+            (click)="findMoves()"
+            [disabled]="loading()"
+            class="w-full text-center p-3 mt-2 mb-1 bg-[#b58863] text-white rounded-lg hover:bg-[color-mix(in_srgb,#b58863,black_40%)] transition-colors duration-200 disabled:bg-[color-mix(in_srgb,#b58863,white_20%)] disabled:cursor-not-allowed">
+            @if(loading()) {
+              <div class="flex items-center justify-center gap-2">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Searching...
+              </div>
+            } @else {
+              <span>Find Moves</span>
+            }
           </button>
         </div>
-      </div>
-    } @else {
-      <div class="animate-fade-in">
-        <h3 class="uppercase tracking-widest font-medium text-neutral-500 mb-4">Historical Moves</h3>
-        <textarea
-          [value]="fen()"
-          (input)="onFenInput($event)"
-          placeholder="e.g., rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-          class="w-full p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:ring-2 focus:ring-[#b58863] focus:border-[#b58863] outline-none transition-all duration-200 resize-none"
-          rows="3"
-        ></textarea>
-        <button
-          type="button"
-          (click)="findMoves()"
-          [disabled]="loading()"
-          class="w-full text-center p-3 mt-2 mb-1 bg-[#b58863] text-white rounded-lg hover:bg-[color-mix(in_srgb,#b58863,black_40%)] transition-colors duration-200 disabled:bg-[color-mix(in_srgb,#b58863,white_20%)] disabled:cursor-not-allowed">
-          @if(loading()) {
-            <div class="flex items-center justify-center gap-2">
-              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Searching...
-            </div>
-          } @else {
-            <span>Find Moves</span>
-          }
-        </button>
+
         @if (historicalMoves().length > 0) {
-          <div class="flex flex-col gap-2 mt-5">
-            <div class="flex flex-col gap-2 transition-all duration-500 ease-in-out" [class]="showAll() ? 'max-h-65 overflow-y-auto custom-scrollbar' : 'max-h-50 overflow-hidden'">
+          <div class="flex flex-col gap-2 mt-5 min-h-0"
+               [class]="showAll() ? 'flex-1' : ''">
+
+            <div class="flex flex-col gap-2 w-full transition-[max-height] duration-500 ease-in-out"
+                 [class]="showAll() ? 'max-h-full overflow-y-auto custom-scrollbar pr-1' : 'max-h-50 overflow-hidden shrink-0'">
 
               @for (move of historicalMoves(); track move) {
                 <button (click)="historicalMoveClicked.emit(move.move)"
-                        class="bg-gray-700 hover:bg-gray-600 py-1 px-3 rounded-md transition-colors duration-200 text-center focus:outline-none focus:ring-2 focus:ring-gray-500 h-8">
+                        class="bg-gray-700 hover:bg-gray-600 py-1 px-3 rounded-md transition-colors duration-200 text-center focus:outline-none focus:ring-2 focus:ring-gray-500 h-8 shrink-0">
                   {{ move }}
                 </button>
               }
@@ -83,18 +93,18 @@
 
             @if (historicalMoves().length > 5) {
               <button (click)="toggleShowAll()"
-                      class="text-xs font-medium text-gray-400 hover:text-white underline decoration-gray-500 hover:decoration-white transition-all self-start">
+                      class="text-xs font-medium text-gray-400 hover:text-white underline decoration-gray-500 hover:decoration-white transition-all self-start shrink-0 py-2">
                 {{ showAll() ? 'Show less' : 'Show ' + (historicalMoves().length - 5) + ' more' }}
               </button>
             }
           </div>
         } @else {
-          <p class="font-medium text-neutral-500 text-sm text-center my-10">
+          <p class="font-medium text-neutral-500 text-sm text-center my-10 shrink-0">
             No historical moves found for this position
           </p>
         }
-      </div>
-    }
+      }
+    </div>
 
     <div class="mb-6 border-t border-neutral-800">
       <h2 class="uppercase tracking-widest font-medium text-neutral-500 my-4">Status</h2>

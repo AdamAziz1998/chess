@@ -59,15 +59,6 @@ export class Sidebar {
     }
   }
 
-  async playMove(move: string) {
-    this.loading.set(true);
-
-    console.log('Playing move:', move);
-    // In a real app, this would emit an event to a parent component.
-
-    this.loading.set(false);
-  }
-
   onFenInput(event: Event) {
     const input = event.target as HTMLInputElement;
     this.fen.set(input.value);
