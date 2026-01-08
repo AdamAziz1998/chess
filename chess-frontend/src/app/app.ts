@@ -358,15 +358,22 @@ export class App implements AfterViewInit {
     const boardEl = document.getElementById('myBoard');
     if (boardEl) {
       boardEl.querySelectorAll('.square-55d63').forEach(el => {
-        el.classList.remove('highlight-selected', 'highlight-move');
+        // MAKE SURE 'highlight-capture' IS IN THIS LIST:
+        el.classList.remove('highlight-selected', 'highlight-move', 'highlight-capture');
       });
     }
   }
 
-  private addHighlight(square: string, type: 'selected' | 'move'): void {
+  private addHighlight(square: string, type: 'selected' | 'move' | 'capture'): void {
     const squareEl = document.querySelector(`#myBoard .square-${square}`);
     if (squareEl) {
-      squareEl.classList.add(type === 'selected' ? 'highlight-selected' : 'highlight-move');
+      if (type === 'selected') {
+        squareEl.classList.add('highlight-selected');
+      } else if (type === 'capture') {
+        squareEl.classList.add('highlight-capture');
+      } else {
+        squareEl.classList.add('highlight-move');
+      }
     }
   }
 
@@ -381,7 +388,8 @@ export class App implements AfterViewInit {
     this.addHighlight(square, 'selected');
 
     moves.forEach((move: any) => {
-      this.addHighlight(move.to, 'move');
+      const isCapture = move.captured !== undefined;
+      this.addHighlight(move.to, isCapture ? 'capture' : 'move');
     });
   }
 

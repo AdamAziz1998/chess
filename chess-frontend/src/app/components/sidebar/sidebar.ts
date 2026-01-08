@@ -67,4 +67,8 @@ export class Sidebar {
   toggleShowAll() {
     this.showAll.update(v => !v);
   }
+
+  calcPct(denominator: number, numerator: number) {
+    return Math.round((numerator/denominator) * 100)
+  }
 }

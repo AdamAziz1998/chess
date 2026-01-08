@@ -7,14 +7,14 @@
 }
 
 .highlight-selected {
-  background-color: rgb(220, 220, 0);
+  background-color: rgb(232, 208, 0);
 }
 
 .highlight-move {
   position: relative;
 }
 
-.highlight-move:empty::before {
+.highlight-move::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -25,9 +25,10 @@
   border-radius: 50%;
   background-color: rgba(0, 0, 0, 0.2);
   pointer-events: none;
+  z-index: 10;
 }
 
-.highlight-move:not(:empty)::before {
+.highlight-capture::before {
   content: "";
   position: absolute;
   top: 0;
@@ -35,7 +36,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 6px solid rgba(0, 0, 0, 0.2); /* Thickness of the ring */
+  border: 6px solid rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
   z-index: 10;
   pointer-events: none;
