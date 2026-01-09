@@ -89,20 +89,20 @@
                         class="py-1 px-3 rounded-md transition-colors duration-200 border border-neutral-900 hover:border-neutral-700 h-8 shrink-0 flex gap-4">
                   <div class="w-6">{{ move.move }}</div>
                   <div class="w-15">{{move.total}}</div>
-                  <div class="flex flex-row flex-1">
-                    <div class="bg-white text-black">
-                      @if (calcPct(move.total, move.white) > 10) {
-                        <div>{{calcPct(move.total, move.white)}}</div>
+                  <div class="flex flex-row flex-1 rounded-md overflow-hidden">
+                    <div class="bg-white text-black" [ngClass]="'w-[' + move.whitePct + '%]'">
+                      @if (move.whitePct && move.whitePct > 15) {
+                        <div class="pl-2">{{move.whitePct}}%</div>
                       }
                     </div>
-                    <div class="bg-neutral-800">
-                      @if (calcPct(move.total, move.draw) > 10) {
-                        <div>{{calcPct(move.total, move.draw)}}</div>
+                    <div class="bg-neutral-800" [ngClass]="'w-[' + move.drawPct + '%]'">
+                      @if (move.drawPct && move.drawPct > 15) {
+                        <div class="pl-2">{{move.drawPct}}%</div>
                       }
                     </div>
-                    <div class="bg-neutral-950">
-                      @if (calcPct(move.total, move.black) > 10) {
-                        <div>{{calcPct(move.total, move.black)}}</div>
+                    <div class="bg-neutral-950" [ngClass]="'w-[' + move.blackPct + '%]'">
+                      @if (move.blackPct && move.blackPct > 15) {
+                        <div class="pl-2">{{move.blackPct}}%</div>
                       }
                     </div>
                   </div>

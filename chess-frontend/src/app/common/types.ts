@@ -7,4 +7,7 @@ export type ChessMove = {
   white: number;
   black: number;
   draw: number;
+  whitePct?: number;
+  drawPct?: number;
+  blackPct?: number;
 }

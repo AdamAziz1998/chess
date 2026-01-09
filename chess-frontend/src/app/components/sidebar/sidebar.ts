@@ -1,8 +1,8 @@
 import {Component, inject, input, output, signal} from '@angular/core';
 import {NgClass, NgOptimizedImage} from '@angular/common';
 import {ChessMove, GameMode, PlayMode} from '../../common/types';
-import {HistoricalMoveService} from '../../services/historical-move.service';
-import {validateFen} from 'chess.js';
+import {HistoricalMove} from '../../services/historical-move';
+import {Chess, validateFen} from 'chess.js';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,7 +11,7 @@ import {validateFen} from 'chess.js';
   templateUrl: './sidebar.html',
 })
 export class Sidebar {
-  private historicalMoveService = inject(HistoricalMoveService);
+  private historicalMoveService = inject(HistoricalMove);
 
   gameMode = input.required<GameMode>();
   playMode = input.required<PlayMode>();
@@ -51,7 +51,17 @@ export class Sidebar {
       this.fenPositionEntered.emit(currentFen);
 
       const result = await this.historicalMoveService.getMovesFromFen(currentFen);
-      this.moves.set(result);
+      this.moves.set(
+        result.map(move => {
+          const total = move.total || 1;
+          return {
+            ...move,
+            whitePct: Math.round((move.white / total) * 100),
+            drawPct: Math.round((move.draw / total) * 100),
+            blackPct: Math.round((move.black / total) * 100)
+          } as ChessMove;
+        })
+      );
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'An unknown error occurred.');
     } finally {

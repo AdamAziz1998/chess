@@ -13,7 +13,7 @@ import {Chess, Square} from 'chess.js';
 import {PromotionModal} from './components/promotion-modal/promotion-modal';
 import {ChessMove, GameMode, PlayMode} from './common/types';
 import {Sidebar} from './components/sidebar/sidebar';
-import {HistoricalMoveService} from './services/historical-move.service';
+import {HistoricalMove} from './services/historical-move';
 
 declare var Chessboard: any;
 
@@ -36,7 +36,7 @@ export class App implements AfterViewInit {
   showPromotionModal = signal<boolean>(false);
   promotionPendingMove = signal<{source: string, target: string, color: string} | null>(null);
 
-  private historicalMoveService = inject(HistoricalMoveService);
+  private historicalMoveService = inject(HistoricalMove);
   private pendingSource: string | null = null;
   private board: any;
   private game: Chess = new Chess();
@@ -338,7 +338,15 @@ export class App implements AfterViewInit {
   private fetchHistoricalMoves(fen: string): void {
     console.log("Fetching historical moves for FEN:", fen);
     this.historicalMoveService.getMovesFromFen(fen).then((moves) => {
-      this.historicalMoves.set(moves);
+      this.historicalMoves.set(moves.map(move => {
+        const total = move.total || 1;
+        return {
+          ...move,
+          whitePct: Math.round((move.white / total) * 100),
+          drawPct: Math.round((move.draw / total) * 100),
+          blackPct: Math.round((move.black / total) * 100)
+        } as ChessMove;
+      }));
     })
   }
 
@@ -358,7 +366,6 @@ export class App implements AfterViewInit {
     const boardEl = document.getElementById('myBoard');
     if (boardEl) {
       boardEl.querySelectorAll('.square-55d63').forEach(el => {
-        // MAKE SURE 'highlight-capture' IS IN THIS LIST:
         el.classList.remove('highlight-selected', 'highlight-move', 'highlight-capture');
       });
     }
