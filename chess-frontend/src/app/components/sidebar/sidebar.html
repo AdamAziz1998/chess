@@ -139,7 +139,7 @@
           <div class="text-s text-neutral-500 w-5 text-center">W</div>
           @for (piece of capturedPieces(); track piece) {
             @if (piece.color == "w") {
-              <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
+              <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
             }
           }
         </div>
@@ -147,7 +147,7 @@
           <div class="text-s text-neutral-500 w-5 text-center">B</div>
           @for (piece of capturedPieces(); track piece) {
             @if (piece.color == "b") {
-              <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
+              <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + piece.color + piece.type.toUpperCase() + '.png'" width="20" height="20" alt="Piece"/>
             }
           }
         </div>

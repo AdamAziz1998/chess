@@ -55,7 +55,7 @@
 //       draggable: true,
 //       position: 'start',
 //       orientation: this.currentOrientation(),
-//       pieceTheme: '/assets/img/chesspieces/wikipedia/{piece}.png',
+//       pieceTheme: '/assets/img/chess-pieces/wikipedia/{piece}.png',
 //       onDragStart: this.onDragStart,
 //       onDrop: this.onDrop,
 //       onMouseoverSquare: this.onMouseoverSquare,

@@ -3,16 +3,16 @@
     <h3 class="text-center text-white font-medium mb-4">Promote to</h3>
     <div class="flex gap-4">
       <button (click)="select('q')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-        <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + color() + 'Q.png'" width="60" height="60" alt="Queen" class="group-hover:scale-110 transition-transform"/>
+        <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + color() + 'Q.png'" width="60" height="60" alt="Queen" class="group-hover:scale-110 transition-transform"/>
       </button>
       <button (click)="select('r')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-        <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + color() + 'R.png'" width="60" height="60" alt="Rook" class="group-hover:scale-110 transition-transform"/>
+        <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + color() + 'R.png'" width="60" height="60" alt="Rook" class="group-hover:scale-110 transition-transform"/>
       </button>
       <button (click)="select('b')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-        <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + color() + 'B.png'" width="60" height="60" alt="Bishop" class="group-hover:scale-110 transition-transform"/>
+        <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + color() + 'B.png'" width="60" height="60" alt="Bishop" class="group-hover:scale-110 transition-transform"/>
       </button>
       <button (click)="select('n')" class="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-lg transition-colors group">
-        <img [ngSrc]="'assets/img/chesspieces/wikipedia/' + color() + 'N.png'" width="60" height="60" alt="Knight" class="group-hover:scale-110 transition-transform"/>
+        <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + color() + 'N.png'" width="60" height="60" alt="Knight" class="group-hover:scale-110 transition-transform"/>
       </button>
     </div>
     <button (click)="onCancel.emit()" class="mt-4 w-full py-2 text-sm text-gray-400 hover:text-white hover:underline">

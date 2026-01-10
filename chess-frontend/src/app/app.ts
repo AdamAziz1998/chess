@@ -1,19 +1,22 @@
 import {
   AfterViewInit,
   Component,
-  computed,
   inject,
   Inject,
   PLATFORM_ID,
   signal,
   ViewEncapsulation
 } from '@angular/core';
-import {isPlatformBrowser, NgOptimizedImage} from '@angular/common';
+import {isPlatformBrowser} from '@angular/common';
 import {Chess, Square} from 'chess.js';
 import {PromotionModal} from './components/promotion-modal/promotion-modal';
 import {ChessMove, GameMode, PlayMode} from './common/types';
 import {Sidebar} from './components/sidebar/sidebar';
 import {HistoricalMove} from './services/historical-move';
+import { Subject, EMPTY } from 'rxjs';
+import { switchMap, catchError } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {ChessEngineService} from './services/engine';
 
 declare var Chessboard: any;
 
@@ -37,12 +40,41 @@ export class App implements AfterViewInit {
   promotionPendingMove = signal<{source: string, target: string, color: string} | null>(null);
 
   private historicalMoveService = inject(HistoricalMove);
+  private chessEngineService = inject(ChessEngineService);
+
+  private boardMoveSubject$ = new Subject<string>();
+
   private pendingSource: string | null = null;
   private board: any;
   private game: Chess = new Chess();
   private squareHover: string | null = null;
 
   currentOrientation = signal<'white' | 'black'>('white');
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    this.boardMoveSubject$.pipe(
+      takeUntilDestroyed(),
+      switchMap((fen) => {
+        return this.historicalMoveService.getHistoricalMovesFromFen(fen).pipe(
+          catchError((err) => {
+            console.error('Failed to fetch moves', err);
+            return EMPTY;
+          })
+        );
+      })
+    ).subscribe((moves) => {
+      const processedMoves = moves.map(move => {
+        const total = move.total || 1;
+        return {
+          ...move,
+          whitePct: Math.round((move.white / total) * 100),
+          drawPct: Math.round((move.draw / total) * 100),
+          blackPct: Math.round((move.black / total) * 100)
+        } as ChessMove;
+      });
+      this.historicalMoves.set(processedMoves);
+    });
+  }
 
   flipBoard(): void {
     const newOrientation = this.currentOrientation() === 'white' ? 'black' : 'white';
@@ -59,8 +91,6 @@ export class App implements AfterViewInit {
     }
   }
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
-
   private initializeGame(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.game = new Chess();
@@ -76,7 +106,7 @@ export class App implements AfterViewInit {
       draggable: true,
       position: 'start',
       orientation: this.currentOrientation(),
-      pieceTheme: '/assets/img/chesspieces/wikipedia/{piece}.png',
+      pieceTheme: '/assets/img/chess-pieces/wikipedia/{piece}.png',
       onDragStart: this.onDragStart,
       onDrop: this.onDrop,
       onMouseoverSquare: this.onMouseoverSquare,
@@ -164,7 +194,7 @@ export class App implements AfterViewInit {
     }
   };
 
-  onMouseoverSquare = (square: string, piece: string) => {
+  onMouseoverSquare = (square: string) => {
     this.squareHover = square;
   };
 
@@ -276,20 +306,29 @@ export class App implements AfterViewInit {
   private makeAiMove(): void {
     if (this.game.isGameOver()) return;
 
-    const moves = this.game.moves();
-    const randomMove = moves[Math.floor(Math.random() * moves.length)];
-    const moveResult = this.game.move(randomMove);
+    this.chessEngineService.getBestMoveFromFen(this.game.fen())
+      .subscribe({
+        next: (response: any) => {
+          const bestMove = response.move || response;
+          try {
+            const moveResult = this.game.move(bestMove);
 
-    if (moveResult.captured) {
-      this.addCapturedPiece(moveResult.color === 'w' ? 'b' : 'w', moveResult.captured);
-    }
-
-    this.board.position(this.game.fen());
-    this.updateStatus();
+            if (moveResult) {
+              this.board.position(this.game.fen());
+              this.finalizeMoveLogic(moveResult);
+            }
+          } catch (e) {
+            console.error('Engine returned an invalid move:', bestMove);
+          }
+        },
+        error: (err) => {
+          console.error('Failed to fetch AI move from engine:', err);
+        }
+      });
   }
 
   private updateStatus(): void {
-    let status = '';
+    let status: string;
     const moveColor = this.game.turn() === 'b' ? 'Black' : 'White';
 
     if (this.game.isCheckmate()) {
@@ -336,18 +375,7 @@ export class App implements AfterViewInit {
   }
 
   private fetchHistoricalMoves(fen: string): void {
-    console.log("Fetching historical moves for FEN:", fen);
-    this.historicalMoveService.getMovesFromFen(fen).then((moves) => {
-      this.historicalMoves.set(moves.map(move => {
-        const total = move.total || 1;
-        return {
-          ...move,
-          whitePct: Math.round((move.white / total) * 100),
-          drawPct: Math.round((move.draw / total) * 100),
-          blackPct: Math.round((move.black / total) * 100)
-        } as ChessMove;
-      }));
-    })
+    this.boardMoveSubject$.next(fen);
   }
 
   onHistoricalMoveClick(move: string): void {

@@ -2,7 +2,10 @@ import {Component, inject, input, output, signal} from '@angular/core';
 import {NgClass, NgOptimizedImage} from '@angular/common';
 import {ChessMove, GameMode, PlayMode} from '../../common/types';
 import {HistoricalMove} from '../../services/historical-move';
-import {Chess, validateFen} from 'chess.js';
+import { validateFen } from 'chess.js';
+import { Subject, EMPTY } from 'rxjs';
+import { switchMap, catchError, tap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sidebar',
@@ -13,19 +16,22 @@ import {Chess, validateFen} from 'chess.js';
 export class Sidebar {
   private historicalMoveService = inject(HistoricalMove);
 
+  // Inputs
   gameMode = input.required<GameMode>();
   playMode = input.required<PlayMode>();
   gameStatus = input.required<string>();
-  showAll = signal(false);
   historicalMoves = input.required<ChessMove[]>();
   capturedPieces = input.required<{color: string, type: string}[]>();
 
+  // Signals
+  showAll = signal(false);
   fen = signal('');
   loading = signal(false);
   error = signal<string | null>(null);
   moves = signal<ChessMove[]>([]);
   hasSearched = signal(false);
 
+  // Outputs
   gameModeChange = output<GameMode>();
   playModeChange = output<PlayMode>();
   historicalMoveClicked = output<string>();
@@ -33,7 +39,46 @@ export class Sidebar {
   resetGameClicked = output<void>();
   fenPositionEntered = output<string>();
 
-  async findMoves() {
+  // RxJS Trigger
+  private searchSubject$ = new Subject<string>();
+
+  constructor() {
+    this.searchSubject$.pipe(
+      takeUntilDestroyed(),
+      tap(() => {
+        this.loading.set(true);
+        this.error.set(null);
+        this.moves.set([]);
+        this.hasSearched.set(true);
+      }),
+
+      switchMap((fen) => {
+
+        return this.historicalMoveService.getHistoricalMovesFromFen(fen).pipe(
+          catchError((err) => {
+            this.error.set(err instanceof Error ? err.message : 'An unknown error occurred.');
+            this.loading.set(false);
+            return EMPTY;
+          })
+        );
+      })
+    ).subscribe((result) => {
+      const processedMoves = result.map(move => {
+        const total = move.total || 1;
+        return {
+          ...move,
+          whitePct: Math.round((move.white / total) * 100),
+          drawPct: Math.round((move.draw / total) * 100),
+          blackPct: Math.round((move.black / total) * 100)
+        } as ChessMove;
+      });
+
+      this.moves.set(processedMoves);
+      this.loading.set(false);
+    });
+  }
+
+  findMoves() {
     const currentFen = this.fen().trim();
     const validation = validateFen(currentFen);
 
@@ -42,31 +87,8 @@ export class Sidebar {
       return;
     }
 
-    this.loading.set(true);
-    this.error.set(null);
-    this.moves.set([]);
-    this.hasSearched.set(true);
-
-    try {
-      this.fenPositionEntered.emit(currentFen);
-
-      const result = await this.historicalMoveService.getMovesFromFen(currentFen);
-      this.moves.set(
-        result.map(move => {
-          const total = move.total || 1;
-          return {
-            ...move,
-            whitePct: Math.round((move.white / total) * 100),
-            drawPct: Math.round((move.draw / total) * 100),
-            blackPct: Math.round((move.black / total) * 100)
-          } as ChessMove;
-        })
-      );
-    } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'An unknown error occurred.');
-    } finally {
-      this.loading.set(false);
-    }
+    this.fenPositionEntered.emit(currentFen);
+    this.searchSubject$.next(currentFen);
   }
 
   onFenInput(event: Event) {
@@ -76,9 +98,5 @@ export class Sidebar {
 
   toggleShowAll() {
     this.showAll.update(v => !v);
-  }
-
-  calcPct(denominator: number, numerator: number) {
-    return Math.round((numerator/denominator) * 100)
   }
 }
