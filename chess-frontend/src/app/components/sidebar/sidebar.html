@@ -172,4 +172,14 @@
       </button>
     </div>
   </div>
+  @if (error()) {
+    <div class="fixed top-0 left-0 w-screen flex justify-center pt-5 z-50 pointer-events-none">
+
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-xl pointer-events-auto flex items-center min-w-[300px] justify-between">
+        <span class="block sm:inline mr-4">{{ error() }}</span>
+        <button (click)="closeError()" class="font-bold text-xl leading-none hover:text-red-900">&times;</button>
+      </div>
+
+    </div>
+  }
 </div>

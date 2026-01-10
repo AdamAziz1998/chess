@@ -94,9 +94,17 @@ export class Sidebar {
   onFenInput(event: Event) {
     const input = event.target as HTMLInputElement;
     this.fen.set(input.value);
+
+    if (this.error()) {
+      this.error.set(null);
+    }
   }
 
   toggleShowAll() {
     this.showAll.update(v => !v);
+  }
+
+  closeError() {
+    this.error.set(null);
   }
 }
