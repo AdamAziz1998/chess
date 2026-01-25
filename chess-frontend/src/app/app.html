@@ -12,8 +12,8 @@
         @if (showPromotionModal()) {
           <app-promotion-modal
             [color]="promotionPendingMove()?.color || 'w'"
-            (onPromote)="promoteTo($event)"
-            (onCancel)="cancelPromotion()">
+            (promote)="promoteTo($event)"
+            (cancelPromotion)="cancelPromotion()">
           </app-promotion-modal>
         }
       </div>

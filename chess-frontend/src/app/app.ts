@@ -2,13 +2,12 @@ import {
   AfterViewInit,
   Component,
   inject,
-  Inject,
   PLATFORM_ID,
   signal,
   ViewEncapsulation
 } from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
-import {Chess, Square} from 'chess.js';
+import {Chess, Move, Square} from 'chess.js';
 import {PromotionModal} from './components/promotion-modal/promotion-modal';
 import {ChessMove, GameMode, PlayMode} from './common/types';
 import {Sidebar} from './components/sidebar/sidebar';
@@ -17,8 +16,9 @@ import { Subject, EMPTY } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {ChessEngineService} from './services/engine';
+import {BoardConfig, ChessBoardInstance} from 'chessboardjs';
 
-declare var Chessboard: any;
+declare const Chessboard: (id: string, config: BoardConfig) => ChessBoardInstance;
 
 @Component({
   selector: 'app-root',
@@ -41,17 +41,18 @@ export class App implements AfterViewInit {
 
   private historicalMoveService = inject(HistoricalMove);
   private chessEngineService = inject(ChessEngineService);
+  private platformId: object = inject(PLATFORM_ID)
 
   private boardMoveSubject$ = new Subject<string>();
 
   private pendingSource: string | null = null;
-  private board: any;
+  private board: ChessBoardInstance | null = null;
   private game: Chess = new Chess();
   private squareHover: string | null = null;
 
   currentOrientation = signal<'white' | 'black'>('white');
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+  constructor() {
     this.boardMoveSubject$.pipe(
       takeUntilDestroyed(),
       switchMap((fen) => {
@@ -116,7 +117,7 @@ export class App implements AfterViewInit {
           this.board.position(this.game.fen());
         }
       }
-    };
+    } as unknown as BoardConfig;
 
     const boardEl = document.getElementById('myBoard');
     if (boardEl) {
@@ -189,7 +190,7 @@ export class App implements AfterViewInit {
       });
       if (move === null) return 'snapback';
       this.finalizeMoveLogic(move);
-    } catch (e) {
+    } catch {
       return 'snapback';
     }
   };
@@ -199,6 +200,7 @@ export class App implements AfterViewInit {
   };
 
   onBoardClick = (): void => {
+    if (!this.board) return;
     if (this.game.isGameOver()) return;
     if (!this.squareHover) return;
 
@@ -256,6 +258,7 @@ export class App implements AfterViewInit {
   promoteTo(type: string): void {
     const pending = this.promotionPendingMove();
     if (!pending) return;
+    if (!this.board) return;
 
     const move = this.game.move({
       from: pending.source,
@@ -273,6 +276,8 @@ export class App implements AfterViewInit {
   }
 
   cancelPromotion(): void {
+    if (!this.board) return;
+
     this.showPromotionModal.set(false);
     this.promotionPendingMove.set(null);
     this.board.position(this.game.fen());
@@ -280,7 +285,7 @@ export class App implements AfterViewInit {
     this.removeHighlights();
   }
 
-  private finalizeMoveLogic(move: any): void {
+  private finalizeMoveLogic(move: Move): void {
     if (move.captured) {
       this.addCapturedPiece(move.color === 'w' ? 'b' : 'w', move.captured);
     }
@@ -308,16 +313,16 @@ export class App implements AfterViewInit {
 
     this.chessEngineService.getBestMoveFromFen(this.game.fen())
       .subscribe({
-        next: (response: any) => {
-          const bestMove = response.move || response;
+        next: (response: ChessMove) => {
+          const bestMove = response.move;
           try {
             const moveResult = this.game.move(bestMove);
 
-            if (moveResult) {
+            if (moveResult && this.board) {
               this.board.position(this.game.fen());
               this.finalizeMoveLogic(moveResult);
             }
-          } catch (e) {
+          } catch {
             console.error('Engine returned an invalid move:', bestMove);
           }
         },
@@ -379,7 +384,7 @@ export class App implements AfterViewInit {
   }
 
   onHistoricalMoveClick(move: string): void {
-    console.log("onHistoricalMoveClick", move);
+    if (!this.board) return;
     if (this.gameMode() !== 'explore' || this.game.isGameOver()) return;
 
     const result = this.game.move(move);
@@ -422,7 +427,7 @@ export class App implements AfterViewInit {
 
     this.addHighlight(square, 'selected');
 
-    moves.forEach((move: any) => {
+    moves.forEach((move: Move) => {
       const isCapture = move.captured !== undefined;
       this.addHighlight(move.to, isCapture ? 'capture' : 'move');
     });

@@ -9,10 +9,10 @@ import { NgOptimizedImage } from '@angular/common';
 })
 export class PromotionModal {
   color = input.required<string>();
-  onPromote = output<string>();
-  onCancel = output<void>();
+  promote = output<string>();
+  cancelPromotion = output<void>();
 
   select(type: string) {
-    this.onPromote.emit(type);
+    this.promote.emit(type);
   }
 }

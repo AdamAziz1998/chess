@@ -1,7 +1,7 @@
 export type GameMode = 'explore' | 'play';
 export type PlayMode = 'pvp' | 'ai-white' | 'ai-black';
 
-export type ChessMove = {
+export interface ChessMove {
   move: string;
   total: number;
   white: number;

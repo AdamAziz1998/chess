@@ -15,7 +15,7 @@
         <img [ngSrc]="'assets/img/chess-pieces/wikipedia/' + color() + 'N.png'" width="60" height="60" alt="Knight" class="group-hover:scale-110 transition-transform"/>
       </button>
     </div>
-    <button (click)="onCancel.emit()" class="mt-4 w-full py-2 text-sm text-gray-400 hover:text-white hover:underline">
+    <button (click)="cancelPromotion.emit()" class="mt-4 w-full py-2 text-sm text-gray-400 hover:text-white hover:underline">
       Cancel
     </button>
   </div>
