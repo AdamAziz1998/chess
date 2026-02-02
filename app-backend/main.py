@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 
-from . import models, schemas, crud, database
-from .minimax.minimax import MiniMaxEngine
+import models, schemas, crud, database
+from minimax.minimax import MiniMaxEngine
 
 # Create tables on startup (For dev only - use Alembic for Prod)
 from contextlib import asynccontextmanager

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List
 
 # --- Position Schemas ---
@@ -10,9 +10,7 @@ class PositionCreate(PositionBase):
 
 class PositionResponse(PositionBase):
     id: int
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Move Schemas ---
 class MoveBase(BaseModel):
@@ -31,9 +29,7 @@ class MoveResponse(MoveBase):
     id: int
     fen_id: int
     new_fen_id: int
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Extended schema to see moves inside a position response
 class PositionWithMoves(PositionResponse):

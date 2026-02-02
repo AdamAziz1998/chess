@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
-from . import models, schemas
+import models, schemas
 
 async def get_position_by_fen(db: AsyncSession, fen: str):
     result = await db.execute(select(models.Position).where(models.Position.fen_position == fen))
@@ -24,7 +25,7 @@ async def get_position_with_moves(db: AsyncSession, fen: str):
     stmt = (
         select(models.Position)
         .where(models.Position.fen_position == fen)
-        .options(select.inload(models.Position.moves_from))
+        .options(selectinload(models.Position.moves_from))
     )
     result = await db.execute(stmt)
     return result.scalars().first()

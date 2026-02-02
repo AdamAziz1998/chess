@@ -1,6 +1,6 @@
 from sqlalchemy import Integer, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from .database import Base
+from database import Base
 from typing import List
 
 class Position(Base):
