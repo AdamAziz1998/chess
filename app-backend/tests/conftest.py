@@ -1,6 +1,7 @@
 """
 Shared pytest fixtures for Chess backend tests.
 """
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -26,22 +27,22 @@ async def test_db():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,  # Required for SQLite in-memory to share connection
     )
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     TestSessionLocal = async_sessionmaker(
         bind=engine,
         expire_on_commit=False,
         class_=AsyncSession,
     )
-    
+
     async with TestSessionLocal() as session:
         yield session
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    
+
     await engine.dispose()
 
 
@@ -50,15 +51,16 @@ async def client(test_db: AsyncSession):
     """
     Provide an async test client with the database dependency overridden.
     """
+
     async def override_get_db():
         yield test_db
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
-    
+
     app.dependency_overrides.clear()
 
 

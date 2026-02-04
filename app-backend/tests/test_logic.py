@@ -4,43 +4,48 @@ Unit tests for minimax/minimax.py and chess-engine/engine.py
 Tests board evaluation, alpha-beta pruning, and best move computation
 using specific FEN positions (Scholar's Mate, Endgames, etc.)
 """
+
 from unittest.mock import Mock
 import sys
 import chess
 
 from minimax.minimax import MiniMaxEngine
 
+
 # Helper to import from chess-engine (hyphenated directory)
 def _get_chess_engine_module():
-    import importlib.util
     import os
-    
+
     # Mock all dependencies before loading the module
     mock_minimax = Mock()
     mock_minimax.MiniMaxEngine = MiniMaxEngine
-    sys.modules['minimax'] = mock_minimax
-    sys.modules['minimax.minimax'] = mock_minimax
-    sys.modules['neuralNetwork'] = Mock()
-    sys.modules['neuralNetwork.infer'] = Mock()
-    sys.modules['chessDatabase'] = Mock()
-    sys.modules['chessDatabase.database'] = Mock()
-    
-    engine_path = os.path.join(os.path.dirname(__file__), '..', 'chess-engine', 'engine.py')
-    
+    sys.modules["minimax"] = mock_minimax
+    sys.modules["minimax.minimax"] = mock_minimax
+    sys.modules["neuralNetwork"] = Mock()
+    sys.modules["neuralNetwork.infer"] = Mock()
+    sys.modules["chessDatabase"] = Mock()
+    sys.modules["chessDatabase.database"] = Mock()
+
+    engine_path = os.path.join(
+        os.path.dirname(__file__), "..", "chess-engine", "engine.py"
+    )
+
     # Read and modify the source to fix relative imports
-    with open(engine_path, 'r') as f:
+    with open(engine_path, "r") as f:
         source = f.read()
-    
+
     # Replace relative import with absolute import that uses our mocked module
-    source = source.replace('from ..minimax.minimax import MiniMaxEngine', 
-                           'from minimax.minimax import MiniMaxEngine')
-    
+    source = source.replace(
+        "from ..minimax.minimax import MiniMaxEngine",
+        "from minimax.minimax import MiniMaxEngine",
+    )
+
     # Compile and execute the modified source
-    code = compile(source, engine_path, 'exec')
-    module = type(sys)('chess_engine_module')
+    code = compile(source, engine_path, "exec")
+    module = type(sys)("chess_engine_module")
     module.__file__ = engine_path
     exec(code, module.__dict__)
-    
+
     return module
 
 
@@ -79,12 +84,12 @@ class TestMiniMaxEngineEvaluation:
         board = chess.Board(fen)
         board.push_uci("g8h8")  # Force a legal move context
         board.pop()
-        
+
         # Create a checkmate position directly
         checkmate_fen = "6Rk/5ppp/8/8/8/8/8/4K3 b - - 0 1"
         board = chess.Board(checkmate_fen)
         engine = MiniMaxEngine(depth=1)
-        
+
         if board.is_checkmate():
             score = engine._evaluate_board(board)
             assert abs(score) == MiniMaxEngine.MATE_SCORE
@@ -93,7 +98,7 @@ class TestMiniMaxEngineEvaluation:
         """Stalemate position should evaluate to 0."""
         engine = MiniMaxEngine(depth=1)
         board = chess.Board(stalemate_fen + " 0 1")
-        
+
         if board.is_stalemate():
             score = engine._evaluate_board(board)
             assert score == 0, "Stalemate should evaluate to 0"
@@ -144,13 +149,27 @@ class TestMiniMaxBestMove:
 
     def test_starting_position_returns_valid_move(self, starting_fen: str):
         """Starting position should return a valid opening move."""
-        best_move, score = MiniMaxEngine.get_best_move_from_fen(
-            starting_fen, depth=2
-        )
+        best_move, score = MiniMaxEngine.get_best_move_from_fen(starting_fen, depth=2)
         valid_opening_moves = {
-            "e2e4", "d2d4", "c2c4", "g1f3", "b1c3", "g1h3",
-            "e2e3", "d2d3", "a2a3", "h2h3", "g2g3", "b2b3",
-            "a2a4", "b2b4", "c2c3", "f2f3", "f2f4", "g2g4", "h2h4"
+            "e2e4",
+            "d2d4",
+            "c2c4",
+            "g1f3",
+            "b1c3",
+            "g1h3",
+            "e2e3",
+            "d2d3",
+            "a2a3",
+            "h2h3",
+            "g2g3",
+            "b2b3",
+            "a2a4",
+            "b2b4",
+            "c2c3",
+            "f2f3",
+            "f2f4",
+            "g2g4",
+            "h2h4",
         }
         assert best_move in valid_opening_moves, f"Got unexpected move: {best_move}"
 
@@ -177,10 +196,10 @@ class TestMiniMaxEdgeCases:
         # Black is checkmated
         checkmate_fen = "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq -"
         board = chess.Board(checkmate_fen + " 0 1")
-        
+
         # Verify this is actually checkmate
         if board.is_checkmate():
-            best_move, score = MiniMaxEngine.get_best_move_from_fen(
+            best_move, _ = MiniMaxEngine.get_best_move_from_fen(
                 checkmate_fen, depth=1
             )
             assert best_move is None
@@ -205,18 +224,27 @@ class TestChessEngineWithMockedNN:
         If a move exists in the database, it should be returned
         without calling the neural network.
         """
-        # Create mock for neural network
-        mock_nn = Mock(return_value="e2e4")
-        sys.modules['neuralNetwork'] = Mock()
-        sys.modules['neuralNetwork.infer'] = Mock()
-        sys.modules['neuralNetwork.infer'].neural_network_best_move = mock_nn
+        # Prepare engine module and mocks
+        engine_module = _get_chess_engine_module()
+        mock_nn = Mock(name="neural_network_best_move", return_value="e2e4")
+        engine_module.neural_network_best_move = mock_nn
+
+        # Dummy Database context manager returning a move from DB
+        class DummyDB:
+            def __enter__(self):
+                return self
+            def __exit__(self, exc_type, exc, tb):
+                return False
+            def get_most_popular_move(self, fen_position):
+                return {"move": "d2d4"}
         
-        # This test validates the mocking pattern works
-        # The actual database integration would require full module loading
+        engine_module.Database = DummyDB
+
+        # When DB has a move, engine should return it and NOT call the NN
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        
-        # Note: Due to module structure, this test demonstrates the pattern
-        # In production, you'd need to adjust imports based on actual paths
+        result = engine_module.best_move(fen)
+        assert result == "d2d4"
+        mock_nn.assert_not_called()
 
     def test_neural_network_fallback_called(self):
         """
@@ -224,10 +252,10 @@ class TestChessEngineWithMockedNN:
         neural network should be used as fallback.
         """
         mock_nn = Mock(return_value="g1f3")
-        sys.modules['neuralNetwork'] = Mock()
-        sys.modules['neuralNetwork.infer'] = Mock()
-        sys.modules['neuralNetwork.infer'].neural_network_best_move = mock_nn
-        
+        sys.modules["neuralNetwork"] = Mock()
+        sys.modules["neuralNetwork.infer"] = Mock()
+        sys.modules["neuralNetwork.infer"].neural_network_best_move = mock_nn
+
         # This test validates the mocking pattern works
         result = mock_nn("some_fen")
         assert result == "g1f3"
@@ -237,29 +265,36 @@ class TestChessEngineWithMockedNN:
         """Test tactical position detection - in check should return True."""
         engine_module = _get_chess_engine_module()
         is_tactical_position = engine_module.is_tactical_position
-        
+
         # King in check
-        board = chess.Board("rnbqkbnr/ppppp1pp/8/5p1Q/4P3/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2")
+        board = chess.Board(
+            "rnbqkbnr/ppppp1pp/8/5p1Q/4P3/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2"
+        )
         assert is_tactical_position(board) is True
 
     def test_is_tactical_position_can_give_check(self):
-        """Position where we can give check should be tactical."""
+        """If a legal checking move exists, position is tactical."""
         engine_module = _get_chess_engine_module()
         is_tactical_position = engine_module.is_tactical_position
-        
-        # Queen can give check
-        board = chess.Board("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2")
-        # Not necessarily tactical just because Qh5 is available
-        # This depends on implementation details
+
+        # Scholar's mate pattern: Qxf7+ is available immediately
+        board = chess.Board(
+            "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq -"
+        )
+        assert is_tactical_position(board) is True
 
     def test_is_tactical_position_quiet(self):
         """A quiet middlegame position may not be tactical."""
         engine_module = _get_chess_engine_module()
         is_tactical_position = engine_module.is_tactical_position
-        
+
         # Closed position, no immediate tactics
-        board = chess.Board("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4")
-        # Result depends on implementation
+        board = chess.Board(
+            "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"
+        )
+        # Function should return a boolean regardless of the position
+        result = is_tactical_position(board)
+        assert isinstance(result, bool)
 
 
 class TestAlphaBetaPruning:
@@ -272,10 +307,10 @@ class TestAlphaBetaPruning:
         """
         engine = MiniMaxEngine(depth=2)
         board = chess.Board(starting_fen + " 0 1")
-        
+
         # Get best move with pruning (the default)
         best_move, score = engine.get_best_move(board)
-        
+
         # Verify we got a valid move
         assert best_move is not None
         assert best_move in board.legal_moves
@@ -286,13 +321,13 @@ class TestAlphaBetaPruning:
         Scholar's mate should be found quickly even at higher depth.
         """
         import time
-        
+
         start_time = time.time()
         best_move, score = MiniMaxEngine.get_best_move_from_fen(
             scholars_mate_fen, depth=4
         )
         elapsed = time.time() - start_time
-        
+
         assert best_move == "h5f7", "Should still find Scholar's mate"
         # With good pruning, this shouldn't take too long
         assert elapsed < 10, f"Search took too long: {elapsed}s"
@@ -304,7 +339,7 @@ class TestPieceValues:
     def test_piece_values_are_reasonable(self):
         """Verify piece values follow standard chess evaluation."""
         values = MiniMaxEngine.PIECE_VALUES
-        
+
         # Standard piece value hierarchy
         assert values[chess.PAWN] < values[chess.KNIGHT]
         assert values[chess.PAWN] < values[chess.BISHOP]

@@ -7,7 +7,7 @@ DB_SETTINGS = {
     "user": "adamAziz",
     "password": "PACIFICPUNCH1998!",
     "host": "localhost",
-    "port": "5432"
+    "port": "5432",
 }
 
 # CONSTRUCTED URL
@@ -19,13 +19,12 @@ DATABASE_URL = (
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    expire_on_commit=False
-)
+AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
+
 
 class Base(DeclarativeBase):
     pass
+
 
 # Dependency for FastAPI routes
 async def get_db():

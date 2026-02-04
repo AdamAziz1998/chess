@@ -2,6 +2,7 @@ import chess
 import math
 from typing import Optional, Tuple
 
+
 class MiniMaxEngine:
     """
     A simple chess engine implementing Minimax with Alpha-Beta pruning
@@ -9,7 +10,7 @@ class MiniMaxEngine:
     """
 
     MATE_SCORE = 10**6
-    
+
     # Moved out of the function to prevent re-creation on every call (Optimization)
     PIECE_VALUES = {
         chess.PAWN: 100,
@@ -17,14 +18,25 @@ class MiniMaxEngine:
         chess.BISHOP: 330,
         chess.ROOK: 500,
         chess.QUEEN: 900,
-        chess.KING: 20000
+        chess.KING: 20000,
     }
-    
+
     # Center squares for positional bonus
     CENTER_SQUARES = {chess.E4, chess.D4, chess.E5, chess.D5}
-    EXTENDED_CENTER = {chess.C3, chess.D3, chess.E3, chess.F3,
-                       chess.C4, chess.F4, chess.C5, chess.F5,
-                       chess.C6, chess.D6, chess.E6, chess.F6}
+    EXTENDED_CENTER = {
+        chess.C3,
+        chess.D3,
+        chess.E3,
+        chess.F3,
+        chess.C4,
+        chess.F4,
+        chess.C5,
+        chess.F5,
+        chess.C6,
+        chess.D6,
+        chess.E6,
+        chess.F6,
+    }
 
     def __init__(self, depth: int = 4):
         """
@@ -33,7 +45,9 @@ class MiniMaxEngine:
         self.max_depth = depth
 
     @staticmethod
-    def get_best_move_from_fen(fen_string: str, depth: int = 4) -> Tuple[Optional[str], int]:
+    def get_best_move_from_fen(
+        fen_string: str, depth: int = 4
+    ) -> Tuple[Optional[str], int]:
         """
         Takes a FEN string, converts it to a chess.Board, and computes the best move.
 
@@ -52,15 +66,17 @@ class MiniMaxEngine:
 
         # If less than 4 parts, it's definitely malformed for our use case.
         if len(fen_parts) < 4:
-            print(f"Error: FEN string must contain at least 4 fields. Received {len(fen_parts)}.")
+            print(
+                f"Error: FEN string must contain at least 4 fields. Received {len(fen_parts)}."
+            )
             return (None, 0)
 
         # Complete the FEN by adding the last two fields (half-move clock and full-move number)
         # We assume 0 and 1 as default values for the missing fields.
         if len(fen_parts) == 4:
-            fen_parts.append('0')  # Half-move clock (for 50-move rule)
-            fen_parts.append('1')  # Full-move number
-            complete_fen = ' '.join(fen_parts)
+            fen_parts.append("0")  # Half-move clock (for 50-move rule)
+            fen_parts.append("1")  # Full-move number
+            complete_fen = " ".join(fen_parts)
         else:
             complete_fen = fen_string.strip()
 
@@ -90,15 +106,17 @@ class MiniMaxEngine:
         best_move = None
         is_white = board.turn == chess.WHITE
         best_eval = -math.inf if is_white else math.inf
-        
+
         # Order moves to improve alpha-beta pruning (captures first)
         moves = self._order_moves(board)
-        
+
         for move in moves:
             board.push(move)
             # After push, it's opponent's turn. If we were White (maximizing),
             # opponent is Black (minimizing), so maximizing=False
-            eval_score = self._minimax(board, self.max_depth - 1, -math.inf, math.inf, not is_white)
+            eval_score = self._minimax(
+                board, self.max_depth - 1, -math.inf, math.inf, not is_white
+            )
             board.pop()
 
             if is_white:
@@ -111,7 +129,7 @@ class MiniMaxEngine:
                     best_move = move
 
         return best_move, best_eval
-    
+
     def _order_moves(self, board: chess.Board) -> list:
         """
         Order moves to improve alpha-beta pruning efficiency.
@@ -121,17 +139,20 @@ class MiniMaxEngine:
         checks = []
         center_moves = []
         other_moves = []
-        
+
         for move in board.legal_moves:
             if board.is_capture(move):
                 captures.append(move)
             elif board.gives_check(move):
                 checks.append(move)
-            elif move.to_square in self.CENTER_SQUARES or move.to_square in self.EXTENDED_CENTER:
+            elif (
+                move.to_square in self.CENTER_SQUARES
+                or move.to_square in self.EXTENDED_CENTER
+            ):
                 center_moves.append(move)
             else:
                 other_moves.append(move)
-        
+
         return captures + checks + center_moves + other_moves
 
     def _evaluate_board(self, board: chess.Board) -> int:
@@ -148,40 +169,42 @@ class MiniMaxEngine:
         for piece_type, value in self.PIECE_VALUES.items():
             score += len(board.pieces(piece_type, chess.WHITE)) * value
             score -= len(board.pieces(piece_type, chess.BLACK)) * value
-        
+
         # Positional bonus for center control (small bonuses)
         for sq in self.CENTER_SQUARES:
             piece = board.piece_at(sq)
             if piece:
                 bonus = 30 if piece.piece_type in (chess.PAWN, chess.KNIGHT) else 10
                 score += bonus if piece.color == chess.WHITE else -bonus
-        
+
         for sq in self.EXTENDED_CENTER:
             piece = board.piece_at(sq)
             if piece:
                 bonus = 10 if piece.piece_type in (chess.PAWN, chess.KNIGHT) else 5
                 score += bonus if piece.color == chess.WHITE else -bonus
-        
+
         return score
 
-    def _quiescence(self, board: chess.Board, alpha: int, beta: int, maximizing: bool) -> int:
+    def _quiescence(
+        self, board: chess.Board, alpha: int, beta: int, maximizing: bool
+    ) -> int:
         """
         Quiescence search to handle 'noisy' positions (captures) at the horizon.
         """
         stand_pat = self._evaluate_board(board)
-        
+
         if maximizing:
             if stand_pat >= beta:
                 return beta
             if stand_pat > alpha:
                 alpha = stand_pat
-            
+
             for move in board.legal_moves:
                 if board.is_capture(move):
                     board.push(move)
                     score = self._quiescence(board, alpha, beta, False)
                     board.pop()
-                    
+
                     if score >= beta:
                         return beta
                     if score > alpha:
@@ -192,20 +215,22 @@ class MiniMaxEngine:
                 return alpha
             if stand_pat < beta:
                 beta = stand_pat
-            
+
             for move in board.legal_moves:
                 if board.is_capture(move):
                     board.push(move)
                     score = self._quiescence(board, alpha, beta, True)
                     board.pop()
-                    
+
                     if score <= alpha:
                         return alpha
                     if score < beta:
                         beta = score
             return beta
 
-    def _minimax(self, board: chess.Board, depth: int, alpha: int, beta: int, maximizing: bool) -> int:
+    def _minimax(
+        self, board: chess.Board, depth: int, alpha: int, beta: int, maximizing: bool
+    ) -> int:
         """
         Minimax algorithm with Alpha-Beta pruning.
         """
@@ -221,7 +246,7 @@ class MiniMaxEngine:
                 board.push(move)
                 eval_score = self._minimax(board, depth - 1, alpha, beta, False)
                 board.pop()
-                
+
                 max_eval = max(max_eval, eval_score)
                 alpha = max(alpha, eval_score)
                 if beta <= alpha:
@@ -233,7 +258,7 @@ class MiniMaxEngine:
                 board.push(move)
                 eval_score = self._minimax(board, depth - 1, alpha, beta, True)
                 board.pop()
-                
+
                 min_eval = min(min_eval, eval_score)
                 beta = min(beta, eval_score)
                 if beta <= alpha:

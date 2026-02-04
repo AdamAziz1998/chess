@@ -1,6 +1,7 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import psycopg2
 from ..minimax.minimax import MiniMaxEngine
@@ -8,8 +9,10 @@ from neuralNetwork.infer import neural_network_best_move
 import chess
 from chessDatabase.database import Database
 
+
 def fen_to_board(fen: str) -> chess.Board:
     return chess.Board(fen)
+
 
 def is_tactical_position(board: chess.Board) -> bool:
     if board.is_check():
@@ -40,6 +43,7 @@ def is_tactical_position(board: chess.Board) -> bool:
 
     return False
 
+
 def should_use_minimax(score, threshold: int = 150) -> bool | str:
     """
     Returns True if minimax should be used — meaning:
@@ -50,7 +54,6 @@ def should_use_minimax(score, threshold: int = 150) -> bool | str:
 
     if not is_tactical_position(board):
         return False  # no reason to go deep
-
 
     if abs(score) >= 20000:  # checkmate
         return True
@@ -63,26 +66,28 @@ def should_use_minimax(score, threshold: int = 150) -> bool | str:
     # No meaningful benefit
     return False
 
+
 def best_move(fen_position: str):
     try:
         with Database() as db:
-            chess_database_move = db.get_most_popular_move(fen_position)['move']
+            chess_database_move = db.get_most_popular_move(fen_position)["move"]
     except psycopg2.OperationalError as e:
-        print(f"\nDATABASE CONNECTION FAILED:")
-        print(f"Please check your DB_SETTINGS in db_manager.py")
+        print("\nDATABASE CONNECTION FAILED:")
+        print("Please check your DB_SETTINGS in db_manager.py")
         print(f"Error: {e}")
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")
 
     if chess_database_move:
         return chess_database_move
-    
+
     minimax_move, score = MiniMaxEngine.get_best_move_from_fen(fen_position)
 
     if should_use_minimax(score):
         return minimax_move
 
     return neural_network_best_move(fen_position)
+
 
 if __name__ == "__main__":
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

@@ -3,11 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 
-import models, schemas, crud, database
+import models
+import schemas
+import crud
+import database
 from minimax.minimax import MiniMaxEngine
 
 # Create tables on startup (For dev only - use Alembic for Prod)
 from contextlib import asynccontextmanager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,15 +19,20 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(models.Base.metadata.create_all)
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
+
 @app.post("/moves/", response_model=schemas.MoveResponse)
-async def add_move(move_data: schemas.MoveCreate, db: AsyncSession = Depends(database.get_db)):
+async def add_move(
+    move_data: schemas.MoveCreate, db: AsyncSession = Depends(database.get_db)
+):
     """
-    Upload a move. automatically creates the Start/End Positions 
+    Upload a move. automatically creates the Start/End Positions
     if they don't exist yet.
     """
     return await crud.create_move_record(db, move_data)
+
 
 @app.get("/position/", response_model=schemas.PositionWithMoves)
 async def get_position(fen: str, db: AsyncSession = Depends(database.get_db)):
@@ -35,9 +44,11 @@ async def get_position(fen: str, db: AsyncSession = Depends(database.get_db)):
         raise HTTPException(status_code=404, detail="Position not found")
     return position
 
+
 # Helper to calculate total games directly in Python
 def calculate_total(m: models.Move):
     return m.white + m.black + m.draw
+
 
 @app.get("/stats", response_model=schemas.PositionStatsResponse)
 async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)):
@@ -47,7 +58,9 @@ async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)
     # 1. Find the Position
     stmt = (
         select(models.Position)
-        .options(selectinload(models.Position.moves_from))  # This fetches the moves immediately
+        .options(
+            selectinload(models.Position.moves_from)
+        )  # This fetches the moves immediately
         .where(models.Position.fen_position == fen)
     )
     result = await db.execute(stmt)
@@ -60,16 +73,18 @@ async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)
     # Because we used lazy="selectin" in models.py, accessing .moves is async-safe
     move_stats = []
     for move in position.moves_from:
-        move_stats.append({
-            "move": move.move,
-            "white": move.white,
-            "black": move.black,
-            "draw": move.draw,
-            "total_games": move.white + move.black + move.draw
-        })
+        move_stats.append(
+            {
+                "move": move.move,
+                "white": move.white,
+                "black": move.black,
+                "draw": move.draw,
+                "total_games": move.white + move.black + move.draw,
+            }
+        )
 
     # Sort by popularity (optional, but helpful)
-    move_stats.sort(key=lambda x: x['total_games'], reverse=True)
+    move_stats.sort(key=lambda x: x["total_games"], reverse=True)
 
     return {"fen": position.fen_position, "moves": move_stats}
 
@@ -90,26 +105,28 @@ async def get_popular_move(fen: str, db: AsyncSession = Depends(database.get_db)
     # 2. Query Move table directly, sorting by sum of columns
     # Formula: (white + black + draw)
     total_games_expr = models.Move.white + models.Move.black + models.Move.draw
-    
+
     move_stmt = (
         select(models.Move)
         .where(models.Move.fen_id == pos_id)
         .order_by(desc(total_games_expr))
         .limit(1)
     )
-    
+
     move_result = await db.execute(move_stmt)
     best_move = move_result.scalars().first()
 
     if not best_move:
-        raise HTTPException(status_code=404, detail="No moves recorded for this position")
+        raise HTTPException(
+            status_code=404, detail="No moves recorded for this position"
+        )
 
     return {
         "move": best_move.move,
         "white": best_move.white,
         "black": best_move.black,
         "draw": best_move.draw,
-        "total_games": best_move.white + best_move.black + best_move.draw
+        "total_games": best_move.white + best_move.black + best_move.draw,
     }
 
 
@@ -139,6 +156,5 @@ def calculate_minimax(fen: str, depth: int = 4):
         "best_move": best_move_uci,
         "score": score,
         "depth": depth,
-        "status": status
+        "status": status,
     }
-
