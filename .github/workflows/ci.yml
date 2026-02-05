@@ -62,4 +62,4 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm run test -- --no-sandbox --no-watch --no-progress --browsers=ChromeHeadless
+        run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadless

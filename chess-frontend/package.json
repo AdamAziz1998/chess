@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "vitest run --browser.name=chrome --browser.headless --browser.args=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage",
     "serve:ssr:chess-frontend": "node dist/chess-frontend/server/server.mjs",
     "lint": "ng lint"
   },
