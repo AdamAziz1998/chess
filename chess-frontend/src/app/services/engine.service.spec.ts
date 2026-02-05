@@ -3,7 +3,8 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 import { ChessEngineService } from './engine';
 import { ChessMove } from '../common/types';
@@ -79,39 +80,29 @@ describe('ChessEngineService', () => {
       req.flush(mockMove);
     });
 
-    it('should return ChessMove on successful response', (done) => {
+    it('should return ChessMove on successful response', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: (result) => {
-          expect(result).toEqual(mockMove);
-          expect(result.move).toBe('e2e4');
-          expect(result.total).toBe(1500);
-          expect(result.white).toBe(800);
-          expect(result.black).toBe(400);
-          expect(result.draw).toBe(300);
-          done();
-        },
-        error: () => fail('Expected successful response'),
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
       );
       req.flush(mockMove);
+
+      const result = await resultPromise;
+      expect(result).toEqual(mockMove);
+      expect(result.move).toBe('e2e4');
+      expect(result.total).toBe(1500);
+      expect(result.white).toBe(800);
+      expect(result.black).toBe(400);
+      expect(result.draw).toBe(300);
     });
 
-    it('should handle 500 Internal Server Error gracefully', (done) => {
+    it('should handle 500 Internal Server Error gracefully', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: () => fail('Expected error response'),
-        error: (error) => {
-          expect(error.status).toBe(500);
-          expect(error.statusText).toBe('Internal Server Error');
-          done();
-        },
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
@@ -121,18 +112,21 @@ describe('ChessEngineService', () => {
         status: 500,
         statusText: 'Internal Server Error',
       });
+
+      try {
+        await resultPromise;
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpErrorResponse);
+        expect((error as HttpErrorResponse).status).toBe(500);
+        expect((error as HttpErrorResponse).statusText).toBe('Internal Server Error');
+      }
     });
 
-    it('should handle 404 Not Found error', (done) => {
+    it('should handle 404 Not Found error', async () => {
       const fenString = '8/8/8/8/8/8/8/8 w - -'; // Empty board - unlikely to be in DB
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: () => fail('Expected error response'),
-        error: (error) => {
-          expect(error.status).toBe(404);
-          done();
-        },
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
@@ -142,18 +136,20 @@ describe('ChessEngineService', () => {
         status: 404,
         statusText: 'Not Found',
       });
+
+      try {
+        await resultPromise;
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpErrorResponse);
+        expect((error as HttpErrorResponse).status).toBe(404);
+      }
     });
 
-    it('should handle network error', (done) => {
+    it('should handle network error', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: () => fail('Expected error response'),
-        error: (error) => {
-          expect(error.status).toBe(0);
-          done();
-        },
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
@@ -163,18 +159,20 @@ describe('ChessEngineService', () => {
         status: 0,
         statusText: 'Unknown Error',
       });
+
+      try {
+        await resultPromise;
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpErrorResponse);
+        expect((error as HttpErrorResponse).status).toBe(0);
+      }
     });
 
-    it('should handle 400 Bad Request for invalid FEN', (done) => {
+    it('should handle 400 Bad Request for invalid FEN', async () => {
       const invalidFen = 'not_a_valid_fen';
 
-      service.getBestMoveFromFen(invalidFen).subscribe({
-        next: () => fail('Expected error response'),
-        error: (error) => {
-          expect(error.status).toBe(400);
-          done();
-        },
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(invalidFen));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
@@ -184,18 +182,20 @@ describe('ChessEngineService', () => {
         status: 400,
         statusText: 'Bad Request',
       });
+
+      try {
+        await resultPromise;
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpErrorResponse);
+        expect((error as HttpErrorResponse).status).toBe(400);
+      }
     });
 
-    it('should handle timeout/503 Service Unavailable', (done) => {
+    it('should handle timeout/503 Service Unavailable', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: () => fail('Expected error response'),
-        error: (error) => {
-          expect(error.status).toBe(503);
-          done();
-        },
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
@@ -205,6 +205,14 @@ describe('ChessEngineService', () => {
         status: 503,
         statusText: 'Service Unavailable',
       });
+
+      try {
+        await resultPromise;
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpErrorResponse);
+        expect((error as HttpErrorResponse).status).toBe(503);
+      }
     });
   });
 
@@ -239,7 +247,7 @@ describe('ChessEngineService', () => {
   });
 
   describe('response parsing', () => {
-    it('should handle response with missing optional fields', (done) => {
+    it('should handle response with missing optional fields', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
       const partialMove: Partial<ChessMove> = {
@@ -251,24 +259,21 @@ describe('ChessEngineService', () => {
         // whitePct, drawPct, blackPct are optional and missing
       };
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: (result) => {
-          expect(result.move).toBe('d2d4');
-          expect(result.whitePct).toBeUndefined();
-          expect(result.drawPct).toBeUndefined();
-          expect(result.blackPct).toBeUndefined();
-          done();
-        },
-        error: () => fail('Expected successful response'),
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
       );
       req.flush(partialMove);
+
+      const result = await resultPromise;
+      expect(result.move).toBe('d2d4');
+      expect(result.whitePct).toBeUndefined();
+      expect(result.drawPct).toBeUndefined();
+      expect(result.blackPct).toBeUndefined();
     });
 
-    it('should handle complete response with all fields', (done) => {
+    it('should handle complete response with all fields', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
       const completeMove: ChessMove = {
@@ -282,21 +287,18 @@ describe('ChessEngineService', () => {
         blackPct: 27.8,
       };
 
-      service.getBestMoveFromFen(fenString).subscribe({
-        next: (result) => {
-          expect(result).toEqual(completeMove);
-          expect(result.whitePct).toBe(50);
-          expect(result.drawPct).toBe(22.2);
-          expect(result.blackPct).toBe(27.8);
-          done();
-        },
-        error: () => fail('Expected successful response'),
-      });
+      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
         request.url.startsWith(environment.historicalUrl)
       );
       req.flush(completeMove);
+
+      const result = await resultPromise;
+      expect(result).toEqual(completeMove);
+      expect(result.whitePct).toBe(50);
+      expect(result.drawPct).toBe(22.2);
+      expect(result.blackPct).toBe(27.8);
     });
   });
 });

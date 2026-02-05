@@ -14,6 +14,8 @@ describe('PromotionModal', () => {
 
     fixture = TestBed.createComponent(PromotionModal);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('color', 'white');
+    fixture.detectChanges();
     await fixture.whenStable();
   });
 
