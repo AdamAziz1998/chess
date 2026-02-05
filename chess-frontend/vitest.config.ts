@@ -4,7 +4,13 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
-      name: 'chrome',
+      provider: 'webdriverio' as const,
+      instances: [
+        {
+          browser: 'chrome',
+          setupFiles: [],
+        },
+      ],
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     },
