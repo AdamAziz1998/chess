@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "vitest run --browser.name=chrome --browser.headless --browser.args=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage",
+    "test": "vitest run",
+    "playwright:install": "playwright install chromium",
     "serve:ssr:chess-frontend": "node dist/chess-frontend/server/server.mjs",
     "lint": "ng lint"
   },
@@ -42,6 +43,8 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^2.2.3",
+    "@analogjs/vitest-angular": "^2.2.3",
     "@angular/build": "^21.0.3",
     "@angular/cli": "^21.0.3",
     "@angular/compiler-cli": "^21.0.0",

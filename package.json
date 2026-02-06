@@ -11,5 +11,10 @@
     "playwright": "^1.58.1",
     "vitest": "^4.0.18",
     "webdriverio": "^9.23.3"
+  },
+  "scripts": {
+    "frontend:test": "npm --prefix chess-frontend test",
+    "frontend:lint": "npm --prefix chess-frontend run lint",
+    "frontend:playwright": "npm --prefix chess-frontend run playwright:install"
   }
 }

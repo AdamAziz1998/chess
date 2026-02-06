@@ -58,11 +58,11 @@ jobs:
       - name: Clean install dependencies
         run: npm ci
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npm run playwright:install
 
       - name: Run linting
         run: npm run lint
 
       - name: Run tests
-        run: ng test
+        run: npm test
