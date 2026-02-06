@@ -65,4 +65,4 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npx vitest run
+        run: ng test
