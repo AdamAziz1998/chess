@@ -5,6 +5,11 @@
     "jquery": "^3.7.1"
   },
   "devDependencies": {
-    "@types/jquery": "^3.5.33"
+    "@types/jquery": "^3.5.33",
+    "@vitest/browser": "^4.0.18",
+    "@vitest/browser-webdriverio": "^4.0.18",
+    "playwright": "^1.58.1",
+    "vitest": "^4.0.18",
+    "webdriverio": "^9.23.3"
   }
 }
