@@ -1,13 +1,17 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 import models
 import schemas
 import crud
 import database
 from minimax.minimax import MiniMaxEngine
+from engine import best_move
 
 # Create tables on startup (For dev only - use Alembic for Prod)
 from contextlib import asynccontextmanager
@@ -20,12 +24,30 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.get("/engine")
+@limiter.limit("45 per minute")
+async def engine(request: Request, fen: str) -> str:
+    """
+    Input a fen position, returns the best calculated move
+    """
+    return await best_move(fen)
+
 
 
 @app.post("/moves/", response_model=schemas.MoveResponse)
+@limiter.limit("10 per minute")
 async def add_move(
-    move_data: schemas.MoveCreate, db: AsyncSession = Depends(database.get_db)
+    request: Request,
+    move_data: schemas.MoveCreate,
+    db: AsyncSession = Depends(database.get_db),
 ):
     """
     Upload a move. automatically creates the Start/End Positions
@@ -35,7 +57,10 @@ async def add_move(
 
 
 @app.get("/position/", response_model=schemas.PositionWithMoves)
-async def get_position(fen: str, db: AsyncSession = Depends(database.get_db)):
+@limiter.limit("10 per minute")
+async def get_position(
+    request: Request, fen: str, db: AsyncSession = Depends(database.get_db)
+):
     """
     Get a position and all available moves from it.
     """
@@ -51,7 +76,10 @@ def calculate_total(m: models.Move):
 
 
 @app.get("/stats", response_model=schemas.PositionStatsResponse)
-async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)):
+@limiter.limit("30 per minute")
+async def get_stats_by_fen(
+    request: Request, fen: str, db: AsyncSession = Depends(database.get_db)
+):
     """
     Search for a given FEN and return stats for all moves from that position.
     """
@@ -90,7 +118,10 @@ async def get_stats_by_fen(fen: str, db: AsyncSession = Depends(database.get_db)
 
 
 @app.get("/historical", response_model=schemas.MoveStat)
-async def get_popular_move(fen: str, db: AsyncSession = Depends(database.get_db)):
+@limiter.limit("50 per minute")
+async def get_popular_move(
+    request: Request, fen: str, db: AsyncSession = Depends(database.get_db)
+):
     """
     Return ONLY the most historically popular move from this position.
     """
@@ -131,7 +162,8 @@ async def get_popular_move(fen: str, db: AsyncSession = Depends(database.get_db)
 
 
 @app.get("/minimax")
-def calculate_minimax(fen: str, depth: int = 4):
+@limiter.limit("10 per minute")
+def calculate_minimax(request: Request, fen: str, depth: int = 4):
     """
     Calculates the best move using the MiniMax engine.
     Note: This runs synchronously in a thread pool to avoid blocking async DB operations.

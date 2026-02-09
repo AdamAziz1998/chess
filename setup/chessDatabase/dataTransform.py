@@ -1,179 +1,151 @@
 import csv
-import re
 import argparse
-import chess
 import logging
-from typing import Tuple
+import multiprocessing
+import concurrent.futures
+import io
+from typing import Set, Dict, Tuple
 from tqdm import tqdm
-
 from database import Database
+from worker import transform_game_batch
 
-
-# ---------------------------
-# Logging Setup
-# ---------------------------
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-# ---------------------------
-# Data Models
-# ---------------------------
+# --- CHUNK SETTINGS ---
+# To run games 0 to 10M: START_INDEX = 0, STOP_AFTER = 10_000_000
+# To run games 10M to 20M: START_INDEX = 10_000_000, STOP_AFTER = 20_000_000
+START_INDEX = 0
+STOP_AFTER = 5_000_000
+# ----------------------
 
-class Position(dict):
-    id: int
-    fen_position: str
-
-
-class Move(dict):
-    id: int
-    fen_id: int
-    new_fen_id: int
-    move: str
-    white: int
-    black: int
-    draw: int
+DB_BATCH_SIZE = 10000  # Increased for big data
+WORKER_PROCESSES = multiprocessing.cpu_count() - 1 or 1
 
 
-# ---------------------------
-# Helpers
-# ---------------------------
+def sync_to_db(db: Database, all_fens: Set[str], all_moves: Dict):
+    required_fens = all_fens.copy()
+    for (fen_before, fen_after) in all_moves.keys():
+        required_fens.add(fen_before)
+        required_fens.add(fen_after)
 
-def transform_game(movetext: str) -> Tuple[list[str], str]:
-    """
-    Clean up PGN/move-text for parsing.
+    if not required_fens:
+        return
 
-    Removes:
-      - Tag header lines (e.g. [Event "..."])
-      - Braced comments {...}
-      - Move numbers like '1.', '1...'
-      - Result tokens (1-0, 0-1, 1/2-1/2, *)
+    # Step 1: Resolve IDs
+    # Note: We only check the DB for what isn't in Python's memory
+    unknown_fens = [f for f in required_fens if f not in db.fen_cache]
 
-    Returns:
-        moves   : list of SAN moves (as strings)
-        result  : '1-0', '0-1', '1/2-1/2', '*', or '' if not found
-    """
-    if not movetext:
-        return [], ""
+    if unknown_fens:
+        from psycopg2.extras import execute_values
+        args_list = [(f,) for f in unknown_fens]
 
-    text = movetext.strip()
+        # Optimized SQL for Chunking:
+        # We still need the IDs back, but we want to avoid heavy locking
+        query = """
+                INSERT INTO Position (fen_position)
+                VALUES %s ON CONFLICT (fen_position) DO \
+                UPDATE SET fen_position = EXCLUDED.fen_position \
+                    RETURNING fen_position, id \
+                """
+        chunk_size = 10000
+        for i in range(0, len(args_list), chunk_size):
+            chunk = args_list[i: i + chunk_size]
+            execute_values(db.cur, query, chunk)
+            for row in db.cur.fetchall():
+                db.fen_cache[row['fen_position']] = row['id']
 
-    # Extract game result
-    match = re.search(r"\b(1-0|0-1|1/2-1/2|\*)\b", text)
-    result = match.group(1) if match else ""
+    # Step 2: Prepare Moves
+    bulk_move_data = []
+    for (fen_before, fen_after), stats in all_moves.items():
+        b_id = db.fen_cache.get(fen_before)
+        a_id = db.fen_cache.get(fen_after)
+        if b_id is not None and a_id is not None:
+            bulk_move_data.append((b_id, a_id, stats["san"], stats["w"], stats["b"], stats["d"]))
 
-    # Remove PGN headers
-    text = "\n".join(line for line in text.splitlines() if not line.strip().startswith("["))
+    # Step 3: Insert Moves
+    if bulk_move_data:
+        db.insert_moves_batch(bulk_move_data)
+    db.commit()
 
-    # Remove comments {...}
-    text = re.sub(r"\{[^}]*\}", " ", text)
-
-    # Remove move numbers like "1." or "34..."
-    text = re.sub(r"\d+\.+", " ", text)
-
-    # Remove results
-    text = re.sub(r"\b(1-0|0-1|1/2-1/2|\*)\b", " ", text)
-
-    # Normalize whitespace → tokens
-    moves = text.split()
-
-    return moves, result
-
-
-# ---------------------------
-# Main Processing
-# ---------------------------
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--csv",
-        required=True,
-        help="Path to CSV file where movetext (UCI/SAN/PGN) is in the last or specified column",
-    )
-    parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Set logging level (default: INFO)",
-    )
+    parser.add_argument("--csv", required=True)
     args = parser.parse_args()
 
-    # Adjust logging level from CLI
-    logger.setLevel(getattr(logging, args.log_level.upper()))
+    print(f"🚀 Processing games {START_INDEX} to {STOP_AFTER}...")
 
-    logger.info("Starting PGN -> DB import")
-    logger.info(f"Reading CSV: {args.csv}")
+    pending_fens = set()
+    pending_moves = {}
+    games_accumulated = 0
+    current_line = 0
 
     with Database() as db:
+        # !!! REMOVED db.clear_all_data() TO PRESERVE PROGRESS !!!
         db.create_tables()
-        illegal_games = 0
-        batch_moves = []
 
-        with open(args.csv, newline="", encoding="utf-8") as f:
-            data = csv.reader(f)
-            next(data)
-            illegal_games = 0
-            
-            # Skip header row, wrap games in tqdm progress bar
-            for game_index, row in enumerate(tqdm(data, desc="Processing games")):
-                try:
-                    movetext = row[-2]  # adjust column if needed
-                    opening = row[14]   # unused for now, maybe store later?
+        with concurrent.futures.ProcessPoolExecutor(max_workers=WORKER_PROCESSES) as executor:
+            with open(args.csv, newline="", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                next(reader)  # Skip header
 
-                    moves, result = transform_game(movetext)
-                    board = chess.Board()
+                chunk_size = 2500
+                batch_buffer = []
+                futures = []
 
-                    for move_index, move_san in enumerate(moves):
-                        # Validate move is legal
-                        try:
-                            move = board.parse_san(move_san) 
-                            if move not in board.legal_moves:
-                                illegal_games += 1
-                                logger.debug(f"Illegal move '{move_san}' at game {game_index}, skipping game")
-                                break
-                        except ValueError:
-                            illegal_games += 1
-                            logger.debug(f"Invalid SAN '{move_san}' at game {game_index}, skipping game")
-                            break
-                        
+                pbar = tqdm(total=(STOP_AFTER - START_INDEX), desc="Chunk Progress")
 
-                        # Current position before move
-                        pre_position_id = db.get_position_id(board.epd())
+                for row in reader:
+                    # Skip until we reach our starting point
+                    if current_line < START_INDEX:
+                        current_line += 1
+                        continue
 
-                        # Make move
-                        board.push_san(move_san)
+                    if current_line >= STOP_AFTER:
+                        break
 
-                        # New position after move
-                        new_position_id = db.get_position_id(board.epd())
+                    current_line += 1
+                    batch_buffer.append(row[-2])
 
-                        # Outcome flags
-                        white_result = 1 if result == "1-0" else 0
-                        black_result = 1 if result == "0-1" else 0
-                        draw_result = 1 if result == "1/2-1/2" else 0
+                    if len(batch_buffer) >= chunk_size:
+                        futures.append(executor.submit(transform_game_batch, list(batch_buffer)))
+                        batch_buffer = []
 
-                        # Insert or update move record
-                        db.insert_move(pre_position_id, new_position_id, move_san, white_result, black_result, draw_result)
+                        if len(futures) >= WORKER_PROCESSES * 2:
+                            done, _ = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
+                            for fut in done:
+                                futures.remove(fut)
+                                fens, moves = fut.result()
+                                pending_fens.update(fens)
+                                for k, v in moves.items():
+                                    if k not in pending_moves:
+                                        pending_moves[k] = v.copy()
+                                    else:
+                                        pending_moves[k]["w"] += v["w"];
+                                        pending_moves[k]["b"] += v["b"];
+                                        pending_moves[k]["d"] += v["d"]
 
-                except Exception as e:
-                    logger.error(f"Error processing game {game_index}: {e}", exc_info=True)
-                    db.rollback()
-                
-                # TODO: In deployment dont have this line
-                if game_index == 1000: 
-                    break
+                                games_accumulated += chunk_size
+                                pbar.update(chunk_size)
 
-    logger.info(f"Finished processing {game_index} games")
-    logger.warning(f"Illegal games skipped: {illegal_games}")
+                                if games_accumulated >= DB_BATCH_SIZE:
+                                    sync_to_db(db, pending_fens, pending_moves)
+                                    pending_fens.clear();
+                                    pending_moves.clear()
+                                    games_accumulated = 0
 
+                # Cleanup remaining...
+                for fut in concurrent.futures.as_completed(futures):
+                    fens, moves = fut.result()
+                    pending_fens.update(fens);  # ... aggregation logic ...
 
-# ---------------------------
-# Entry Point
-# ---------------------------
+                if pending_moves:
+                    sync_to_db(db, pending_fens, pending_moves)
+
+                pbar.close()
+                print(f"✅ Chunk Complete. Next START_INDEX should be {current_line}")
+
 
 if __name__ == "__main__":
     main()

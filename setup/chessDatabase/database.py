@@ -12,9 +12,12 @@ DB_SETTINGS = {
 class Database:
     def __init__(self, settings=DB_SETTINGS):
         self.conn = psycopg2.connect(**settings)
-        self.conn.autocommit = False  # manual commit for batching
+        self.conn.autocommit = False
         self.cur = self.conn.cursor(cursor_factory=RealDictCursor)
-        self.fen_cache = {}  # in-memory cache {fen: id}
+        self.fen_cache = {}
+
+        self.cur.execute("SET synchronous_commit TO OFF;")
+        self.cur.execute("SET maintenance_work_mem = '1GB';")
 
     def close(self):
         self.cur.close()
@@ -99,23 +102,17 @@ class Database:
         """, (fen_id, new_fen_id, move, white, black, draw))
         return self.cur.fetchone()["id"]
 
-    def insert_moves_batch(self, moves: list[tuple]):
-        """
-        Bulk insert moves:
-        moves = [(fen_id, new_fen_id, move, white, black, draw), ...]
-        """
-        execute_values(
-            self.cur,
-            """
-            INSERT INTO Move (fen_id, new_fen_id, move, white, black, draw)
-            VALUES %s
-            ON CONFLICT (fen_id, new_fen_id) DO UPDATE
-            SET white = Move.white + EXCLUDED.white,
+    def insert_moves_batch(self, moves: list[tuple], page_size=10000):
+        query = """
+                INSERT INTO Move (fen_id, new_fen_id, move, white, black, draw)
+                VALUES %s
+            ON CONFLICT (fen_id, new_fen_id) DO UPDATE SET 
+                white = Move.white + EXCLUDED.white,
                 black = Move.black + EXCLUDED.black,
-                draw  = Move.draw + EXCLUDED.draw
-            """,
-            moves
-        )
+                draw = Move.draw + EXCLUDED.draw
+                """
+        # page_size helps psycopg2 manage memory for massive batches
+        execute_values(self.cur, query, moves, page_size=page_size)
 
     def get_moves_by_position(self, fen_id: int):
         self.cur.execute("SELECT * FROM Move WHERE fen_id = %s;", (fen_id,))
@@ -167,6 +164,19 @@ class Database:
     def delete_move(self, move_id: int):
         self.cur.execute("DELETE FROM Move WHERE id = %s;", (move_id,))
         self.conn.commit()
+
+    def clear_all_data(self):
+        """Wipes all data from tables and resets ID counters to 1."""
+        # TRUNCATE is faster than DELETE.
+        # CASCADE ensures moves are deleted when positions are deleted.
+        # RESTART IDENTITY resets the ID columns back to 1.
+        self.cur.execute("TRUNCATE TABLE Position, Move RESTART IDENTITY CASCADE;")
+        self.conn.commit()
+
+        # IMPORTANT: Clear your in-memory cache, or your script will
+        # try to use IDs that no longer exist!
+        self.fen_cache = {}
+        print("⚠️  Database wiped clean.")
 
     # ------------------------
     # Commit control

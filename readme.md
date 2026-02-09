@@ -17,5 +17,5 @@ Command to train neural network
 python neuralNetwork/train.py --meta neuralNetwork/processed/meta.json --epochs 2 --batch_size 512 --lr 0.001
 
 Command to create the chess DB
-python chessDatabase/dataTransform.py --csv assets/data/dataset.csv 
+python setup/chessDatabase/dataTransform.py --csv setup/assets/data/dataset.csv 
 (inside the file uncomment the row limiter)
