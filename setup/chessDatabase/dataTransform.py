@@ -3,8 +3,7 @@ import argparse
 import logging
 import multiprocessing
 import concurrent.futures
-import io
-from typing import Set, Dict, Tuple
+from typing import Set, Dict
 from tqdm import tqdm
 from database import Database
 from worker import transform_game_batch
@@ -122,8 +121,8 @@ def main():
                                     if k not in pending_moves:
                                         pending_moves[k] = v.copy()
                                     else:
-                                        pending_moves[k]["w"] += v["w"];
-                                        pending_moves[k]["b"] += v["b"];
+                                        pending_moves[k]["w"] += v["w"]
+                                        pending_moves[k]["b"] += v["b"]
                                         pending_moves[k]["d"] += v["d"]
 
                                 games_accumulated += chunk_size
@@ -131,14 +130,14 @@ def main():
 
                                 if games_accumulated >= DB_BATCH_SIZE:
                                     sync_to_db(db, pending_fens, pending_moves)
-                                    pending_fens.clear();
+                                    pending_fens.clear()
                                     pending_moves.clear()
                                     games_accumulated = 0
 
                 # Cleanup remaining...
                 for fut in concurrent.futures.as_completed(futures):
                     fens, moves = fut.result()
-                    pending_fens.update(fens);  # ... aggregation logic ...
+                    pending_fens.update(fens)  # ... aggregation logic ...
 
                 if pending_moves:
                     sync_to_db(db, pending_fens, pending_moves)
