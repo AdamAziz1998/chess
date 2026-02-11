@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.pool import StaticPool
 from httpx import AsyncClient, ASGITransport
 
-from database import Base, get_db
-from main import app
+from ..database import Base, get_db
+from ..main import app
 
 
 # Use in-memory SQLite for fast, isolated tests
