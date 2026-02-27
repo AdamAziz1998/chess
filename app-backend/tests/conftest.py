@@ -1,6 +1,10 @@
 """
 Shared pytest fixtures for Chess backend tests.
 """
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
 import pytest_asyncio
@@ -8,8 +12,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.pool import StaticPool
 from httpx import AsyncClient, ASGITransport
 
-from ..database import Base, get_db
-from ..main import app
+from database import Base, get_db
+from main import app
 
 
 # Use in-memory SQLite for fast, isolated tests

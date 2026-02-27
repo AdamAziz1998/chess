@@ -1,0 +1,12 @@
+<div class="glassmorphism rounded-lg p-4 flex flex-col items-center justify-center gap-3 aspect-square transition-all duration-300 transform hover:-translate-y-1 glow-on-hover border">
+  @if (skill().logoPath) {
+    <img ngSrc="{{skill().logoPath}}" alt="Skill logo" height="60" width="60"/>
+  } @else {
+    <div class="w-10 h-10 flex items-center justify-center text-gray-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l-4 4-4-4 4-4M6 12l4 4 4-4-4-4-4 4z" />
+      </svg>
+    </div>
+  }
+  <p class="font-semibold text-white text-xs text-center h-8 flex items-center">{{ skill().name }}</p>
+</div>

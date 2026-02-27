@@ -1,0 +1,22 @@
+<div class="glassmorphism rounded-lg p-6 flex flex-col h-full transition-all duration-300 glow-on-hover transform hover:-translate-y-1">
+  <div class="flex-grow">
+    <div class="flex justify-between items-start mb-4">
+      <h3 class="text-xl font-bold text-white">{{ project().title }}</h3>
+      <span class="text-xs font-mono px-2 py-1 rounded-full border" [class]="getStatusColor(project().status)">
+        {{ project().status }}
+      </span>
+    </div>
+    <p class="text-violet-300 font-semibold text-sm mb-2">{{ project().tagline }}</p>
+    <p class="text-gray-400 text-sm mb-4">{{ project().summary }}</p>
+    <div class="flex flex-wrap gap-2 mb-4">
+      @for(tech of project().tech; track tech) {
+        <span class="text-xs font-mono bg-gray-700/50 text-gray-300 px-2 py-1 rounded">{{ tech }}</span>
+      }
+    </div>
+  </div>
+  <div class="mt-auto">
+    <button (click)="onViewDetails()" class="w-full text-center bg-violet-600/50 hover:bg-violet-600/80 text-white font-semibold py-2 px-4 rounded transition-colors duration-300 border border-violet-500">
+      View Case Study
+    </button>
+  </div>
+</div>
