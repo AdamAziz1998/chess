@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, inject, Inject, PLATFORM_ID, signal} from '@angular/core';
+import {AfterViewInit, Component, inject, PLATFORM_ID, signal} from '@angular/core';
 import {DatePipe, isPlatformBrowser} from '@angular/common';
 import {DataService} from '../../services/data.service';
 import {Project, Skill} from '../../models/project.model';
@@ -7,7 +7,7 @@ import {ProjectCardComponent} from '../../components/project-card/project-card.c
 import {ProjectModalComponent} from '../../components/project-modal/project-modal.component';
 import {SkillBadgeComponent} from '../../components/skill-badge/skill-badge.component';
 
-declare var particlesJS: any;
+declare const particlesJS: (id: string, config: unknown) => void;
 
 @Component({
   selector: 'app-home',
@@ -22,7 +22,7 @@ declare var particlesJS: any;
   styleUrl: './home.css',
 })
 export class Home implements AfterViewInit{
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  private platformId = inject(PLATFORM_ID);
 
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {

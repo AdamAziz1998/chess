@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, HostListener, ElementRef } from '@angular/core';
+import {Component, ChangeDetectionStrategy, input, output, ElementRef, inject} from '@angular/core';
 import { Project } from '../../models/project.model';
 
 @Component({
@@ -9,8 +9,7 @@ import { Project } from '../../models/project.model';
 export class ProjectModalComponent {
   project = input.required<Project>();
   closeModal = output<void>();
-
-  constructor(private elementRef: ElementRef) {}
+  private elementRef = inject(ElementRef);
 
   onClose() {
     this.closeModal.emit();
@@ -20,10 +19,5 @@ export class ProjectModalComponent {
     if (event.target === this.elementRef.nativeElement.querySelector('.modal-backdrop')) {
         this.onClose();
     }
-  }
-
-  // @HostListener('document:keydown.escape', ['$event'])
-  onKeydownHandler(event: KeyboardEvent) {
-    this.onClose();
   }
 }
