@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ChessGame } from './chess-game';
 
-describe('Chess', () => {
+describe('ChessGame', () => {
   let component: ChessGame;
   let fixture: ComponentFixture<ChessGame>;
 
@@ -13,10 +13,16 @@ describe('Chess', () => {
 
     fixture = TestBed.createComponent(ChessGame);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should render title', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const titleText = compiled.querySelector('h1')?.textContent;
+    expect(titleText).toContain('Chess Practice and Explorer');
   });
 });

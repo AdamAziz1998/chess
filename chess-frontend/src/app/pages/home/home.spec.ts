@@ -7,6 +7,7 @@ describe('Home', () => {
   let fixture: ComponentFixture<Home>;
 
   beforeEach(async () => {
+    vi.stubGlobal('particlesJS', vi.fn());
     await TestBed.configureTestingModule({
       imports: [Home]
     })
@@ -14,6 +15,7 @@ describe('Home', () => {
 
     fixture = TestBed.createComponent(Home);
     component = fixture.componentInstance;
+    fixture.detectChanges();
     await fixture.whenStable();
   });
 
