@@ -3,8 +3,14 @@ Shared pytest fixtures for Chess backend tests.
 """
 import sys
 import os
+from unittest.mock import MagicMock
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# Mock the neural network module before importing main to avoid loading
+# the large ML model file (chess_model.pt) which is not stored in git.
+sys.modules["neuralNetwork"] = MagicMock()
+sys.modules["neuralNetwork.infer"] = MagicMock()
 
 import pytest
 import pytest_asyncio
