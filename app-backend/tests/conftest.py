@@ -8,64 +8,22 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.pool import StaticPool
 from httpx import AsyncClient, ASGITransport
 
-from database import Base, get_db
+# Set TESTING env var BEFORE importing app so the limiter is disabled at import time
+os.environ["TESTING"] = "True"
+
 from main import app
 
 
-# Use in-memory SQLite for fast, isolated tests
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-
 @pytest_asyncio.fixture
-async def test_db():
+async def client():
     """
-    Create a fresh in-memory SQLite database for each test.
-    Yields an AsyncSession and cleans up afterward.
+    Provide an async test client for the FastAPI app.
     """
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,  # Required for SQLite in-memory to share connection
-    )
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    TestSessionLocal = async_sessionmaker(
-        bind=engine,
-        expire_on_commit=False,
-        class_=AsyncSession,
-    )
-
-    async with TestSessionLocal() as session:
-        yield session
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-    await engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def client(test_db: AsyncSession):
-    """
-    Provide an async test client with the database dependency overridden.
-    """
-
-    async def override_get_db():
-        yield test_db
-
-    app.dependency_overrides[get_db] = override_get_db
-
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
-
-    app.dependency_overrides.clear()
 
 
 # Common FEN strings for testing

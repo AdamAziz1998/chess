@@ -1,46 +1,4 @@
-from pydantic import BaseModel, ConfigDict
-from typing import List
-
-
-# --- Position Schemas ---
-class PositionBase(BaseModel):
-    fen_position: str
-
-
-class PositionCreate(PositionBase):
-    pass
-
-
-class PositionResponse(PositionBase):
-    id: int
-    model_config = ConfigDict(from_attributes=True)
-
-
-# --- Move Schemas ---
-class MoveBase(BaseModel):
-    move: str
-    white: int = 0
-    black: int = 0
-    draw: int = 0
-
-
-class MoveCreate(MoveBase):
-    # We allow creating a move by providing the FEN strings directly
-    # This is much easier for the client than knowing IDs beforehand
-    start_fen: str
-    end_fen: str
-
-
-class MoveResponse(MoveBase):
-    id: int
-    fen_id: int
-    new_fen_id: int
-    model_config = ConfigDict(from_attributes=True)
-
-
-# Extended schema to see moves inside a position response
-class PositionWithMoves(PositionResponse):
-    moves_from: List[MoveResponse] = []
+from pydantic import BaseModel
 
 
 class MoveStat(BaseModel):

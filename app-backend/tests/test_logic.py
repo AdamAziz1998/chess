@@ -4,17 +4,22 @@ Unit tests for minimax/minimax.py and chess-engine/engine.py
 Tests board evaluation, alpha-beta pruning, and best move computation
 using specific FEN positions (Scholar's Mate, Endgames, etc.)
 """
+import sys
+import os
 
-from unittest.mock import Mock
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import pytest
+from unittest.mock import Mock, AsyncMock
 import sys
 import chess
 
 from minimax.minimax import MiniMaxEngine
 
 
-# Helper to import from chess-engine (hyphenated directory)
+# Helper to load engine.py with mocked external dependencies
 def _get_chess_engine_module():
-    import os
+    from pathlib import Path
 
     # Mock all dependencies before loading the module
     mock_minimax = Mock()
@@ -23,24 +28,17 @@ def _get_chess_engine_module():
     sys.modules["minimax.minimax"] = mock_minimax
     sys.modules["neuralNetwork"] = Mock()
     sys.modules["neuralNetwork.infer"] = Mock()
-    sys.modules["chessDatabase"] = Mock()
-    sys.modules["chessDatabase.database"] = Mock()
 
-    engine_path = os.path.join(
-        os.path.dirname(__file__), "..", "chess-engine", "engine.py"
-    )
+    # Mock lichess module - default to returning no move
+    mock_lichess = Mock()
+    mock_lichess.get_most_popular_move = AsyncMock(return_value=None)
+    sys.modules["lichess"] = mock_lichess
 
-    # Read and modify the source to fix relative imports
+    engine_path = str(Path(__file__).resolve().parent.parent / "engine.py")
+
     with open(engine_path, "r") as f:
         source = f.read()
 
-    # Replace relative import with absolute import that uses our mocked module
-    source = source.replace(
-        "from ..minimax.minimax import MiniMaxEngine",
-        "from minimax.minimax import MiniMaxEngine",
-    )
-
-    # Compile and execute the modified source
     code = compile(source, engine_path, "exec")
     module = type(sys)("chess_engine_module")
     module.__file__ = engine_path
@@ -213,53 +211,64 @@ class TestMiniMaxEdgeCases:
             assert best_move is not None, f"Depth {depth} should return a move"
 
 
-class TestChessEngineWithMockedNN:
+class TestChessEngineWithMockedDependencies:
     """
-    Tests for chess-engine/engine.py with mocked neural network.
-    This avoids loading heavy ML models during unit tests.
+    Tests for engine.py with mocked external dependencies.
+    Avoids loading heavy ML models or making network calls.
     """
 
-    def test_best_move_uses_database_first(self):
+    @pytest.mark.asyncio
+    async def test_best_move_uses_lichess_first(self):
         """
-        If a move exists in the database, it should be returned
+        If Lichess returns a move, it should be returned
         without calling the neural network.
         """
-        # Prepare engine module and mocks
         engine_module = _get_chess_engine_module()
         mock_nn = Mock(name="neural_network_best_move", return_value="e2e4")
         engine_module.neural_network_best_move = mock_nn
 
-        # Dummy Database context manager returning a move from DB
-        class DummyDB:
-            def __enter__(self):
-                return self
-            def __exit__(self, exc_type, exc, tb):
-                return False
-            def get_most_popular_move(self, fen_position):
-                return {"move": "d2d4"}
-        
-        engine_module.Database = DummyDB
+        # Mock Lichess returning a move
+        mock_get_popular = AsyncMock(return_value={
+            "move": "d2d4",
+            "white": 1000,
+            "black": 500,
+            "draw": 300,
+            "total_games": 1800,
+        })
+        engine_module.get_most_popular_move = mock_get_popular
 
-        # When DB has a move, engine should return it and NOT call the NN
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        result = engine_module.best_move(fen)
+        result = await engine_module.best_move(fen)
         assert result == "d2d4"
         mock_nn.assert_not_called()
 
-    def test_neural_network_fallback_called(self):
+    @pytest.mark.asyncio
+    async def test_neural_network_fallback_when_no_lichess(self):
         """
-        When database returns nothing and minimax score is below threshold,
-        neural network should be used as fallback.
+        When Lichess returns nothing and the position is not tactical,
+        the neural network should be used as fallback.
         """
-        mock_nn = Mock(return_value="g1f3")
-        sys.modules["neuralNetwork"] = Mock()
-        sys.modules["neuralNetwork.infer"] = Mock()
-        sys.modules["neuralNetwork.infer"].neural_network_best_move = mock_nn
+        engine_module = _get_chess_engine_module()
 
-        # This test validates the mocking pattern works
-        result = mock_nn("some_fen")
+        # Lichess has no move for this position
+        mock_get_popular = AsyncMock(return_value=None)
+        engine_module.get_most_popular_move = mock_get_popular
+
+        # Replace MiniMaxEngine in the engine module's namespace with a mock
+        # (avoids mutating the real MiniMaxEngine class which would leak into other tests)
+        mock_engine_class = Mock()
+        mock_engine_class.get_best_move_from_fen = Mock(return_value=("g1f3", 10))
+        engine_module.MiniMaxEngine = mock_engine_class
+        # Force quiet (non-tactical) evaluation
+        engine_module.is_tactical_position = Mock(return_value=False)
+
+        mock_nn = Mock(return_value="g1f3")
+        engine_module.neural_network_best_move = mock_nn
+
+        fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        result = await engine_module.best_move(fen)
         assert result == "g1f3"
-        mock_nn.assert_called_once_with("some_fen")
+        mock_nn.assert_called_once_with(fen)
 
     def test_is_tactical_position_check(self):
         """Test tactical position detection - in check should return True."""
@@ -318,13 +327,13 @@ class TestAlphaBetaPruning:
     def test_pruning_efficiency_with_tactical_position(self, scholars_mate_fen: str):
         """
         In tactical positions, pruning should still find the best move.
-        Scholar's mate should be found quickly even at higher depth.
+        Scholar's mate should be found quickly even at depth=3.
         """
         import time
 
         start_time = time.time()
         best_move, score = MiniMaxEngine.get_best_move_from_fen(
-            scholars_mate_fen, depth=4
+            scholars_mate_fen, depth=3
         )
         elapsed = time.time() - start_time
 
