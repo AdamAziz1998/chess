@@ -95,7 +95,7 @@ export class DataService {
       ],
       tech: ['FastAPI', 'Angular', 'PostgreSQL', 'PyTorch', 'Python', 'Tailwind CSS'],
       repoUrl: 'https://github.com/AdamAziz1998/chess',
-      liveUrl: 'https://www.azizoneill.com/chess',
+      liveUrl: 'http://localhost:4200/chess',
       caseStudy: {
         problem: "Modern chess engines are dominated by expensive neural networks. This project explores a hybrid approach combining a traditional alpha-beta engine, a game database, and a lightweight neural network for consumer-hardware moves.",
         role: ["Solo Developer", "Engine development (Python/PyTorch)", "Database design and querying (PostgreSQL)", "API development (FastAPI)", "Frontend playable interface (Angular)"],

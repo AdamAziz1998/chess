@@ -3,3 +3,4 @@
 *.dat
 node_modules/*
 setup/chessDatabase/data/
+.env

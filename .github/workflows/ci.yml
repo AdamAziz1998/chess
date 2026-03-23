@@ -35,7 +35,9 @@ jobs:
         run: ruff check . --output-format=github
 
       - name: Run tests with pytest
-        run: pytest tests/ -v --tb=short
+        run: python -m pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: .
 
   frontend-ci:
     name: Frontend CI (Angular)

@@ -7,7 +7,7 @@ import {environment} from '../../environments/environent';
 @Injectable({providedIn: 'root'})
 export class HistoricalMove {
   private http: HttpClient = inject(HttpClient);
-  private readonly baseUrl = environment.engineUrl;
+  private readonly baseUrl = environment.historicalUrl;
 
   getHistoricalMovesFromFen(fen: string): Observable<ChessMove[]> {
     const encodedFen = encodeURIComponent(fen);
