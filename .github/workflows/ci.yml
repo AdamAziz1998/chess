@@ -37,8 +37,6 @@ jobs:
 
       - name: Run tests with pytest
         run: python -m pytest tests/ -v --tb=short
-        env:
-          PYTHONPATH: ${{ github.workspace }}/app-backend
 
   frontend-ci:
     name: Frontend CI (Angular)

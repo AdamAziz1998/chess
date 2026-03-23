@@ -7,6 +7,13 @@ from urllib.parse import unquote
 import schemas
 import os
 from minimax.minimax import MiniMaxEngine
+
+import sys
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(root_dir))
+
 from engine import best_move
 from lichess import get_lichess_stats, get_most_popular_move
 

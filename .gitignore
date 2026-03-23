@@ -1,6 +1,27 @@
-*.csv
+# Virtual Environments
+.venv/
+venv/
+env/
+bin/
+lib/
+include/
+pyvenv.cfg
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# macOS system files
+.DS_Store
+
+# Distribution / Build
+dist/
+build/
+*.egg-info/
+
+# Neural network
 *.pt
 *.dat
-node_modules/*
-setup/chessDatabase/data/
-.env
+setup/
