@@ -12,14 +12,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 sys.modules["neuralNetwork"] = MagicMock()
 sys.modules["neuralNetwork.infer"] = MagicMock()
 
-import pytest
-import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+import pytest  # noqa: E402
+import pytest_asyncio  # noqa: E402
+from httpx import AsyncClient, ASGITransport  # noqa: E402
 
 # Set TESTING env var BEFORE importing app so the limiter is disabled at import time
 os.environ["TESTING"] = "True"
 
-from main import app
+from main import app  # noqa: E402
 
 
 @pytest_asyncio.fixture

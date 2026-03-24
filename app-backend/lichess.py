@@ -4,8 +4,12 @@ https://explorer.lichess.ovh
 """
 import os
 import httpx
+import logging
 from typing import Optional
 from dotenv import load_dotenv
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -46,10 +50,6 @@ async def get_lichess_stats(fen: str) -> Optional[dict]:
     Returns the raw Lichess response (moves use 'uci' and 'draws' keys).
     """
     return await query_explorer(fen)
-
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 async def get_most_popular_move(fen: str) -> Optional[dict]:
     """Get the most popular move for a position from the Lichess explorer.
