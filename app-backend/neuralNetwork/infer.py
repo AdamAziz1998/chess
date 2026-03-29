@@ -63,8 +63,13 @@ def neural_network_best_move(fen: str) -> str:
     # Find first legal move
     for idx in sorted_indices.tolist():
         move = index_to_move(idx, board)
-        if move in board.legal_moves:
-            return move.uci()
+        if move:
+            try:
+                standard_move = board.parse_uci(move.uci())
+                if standard_move in board.legal_moves:
+                    return standard_move.uci()
+            except ValueError:
+                pass
 
     # Fallback (shouldn't happen)
     return "0000"
@@ -82,8 +87,13 @@ def infer_top_moves(fen: str, k: int = 5):
     results = []
     for idx in sorted_indices.tolist():
         move = index_to_move(idx, board)
-        if move in board.legal_moves:
-            results.append((move.uci(), float(probs[idx])))
+        if move:
+            try:
+                standard_move = board.parse_uci(move.uci())
+                if standard_move in board.legal_moves:
+                    results.append((standard_move.uci(), float(probs[idx])))
+            except ValueError:
+                pass
         if len(results) >= k:
             break
     return results

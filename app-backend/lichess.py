@@ -44,12 +44,24 @@ async def query_explorer(fen: str, source: str = "lichess") -> Optional[dict]:
         return None
 
 
+import chess
+
+def _standardize_uci(uci: str, fen: str) -> str:
+    try:
+        return chess.Board(fen).parse_uci(uci).uci()
+    except Exception:
+        return uci
+
 async def get_lichess_stats(fen: str) -> Optional[dict]:
     """Get move statistics for a position from the Lichess explorer.
 
     Returns the raw Lichess response (moves use 'uci' and 'draws' keys).
     """
-    return await query_explorer(fen)
+    data = await query_explorer(fen)
+    if data and "moves" in data:
+        for m in data["moves"]:
+            m["uci"] = _standardize_uci(m["uci"], fen)
+    return data
 
 async def get_most_popular_move(fen: str) -> Optional[dict]:
     """Get the most popular move for a position from the Lichess explorer.
@@ -57,12 +69,12 @@ async def get_most_popular_move(fen: str) -> Optional[dict]:
     Returns a dict with keys: move, white, black, draw, total_games, or None.
     """
     data = await query_explorer(fen)
-    logger.info("Move 1: ", data)
+    logger.info("Move 1: %s", data)
     if not data:
         return None
     top_move = data["moves"][0]
     return {
-        "move": top_move["uci"],
+        "move": _standardize_uci(top_move["uci"], fen),
         "white": top_move["white"],
         "black": top_move["black"],
         "draw": top_move["draws"],
