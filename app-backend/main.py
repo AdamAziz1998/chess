@@ -43,21 +43,6 @@ async def engine(request: Request, fen: str) -> str:
     return await best_move(cleaned_fen)
 
 
-@app.get("/stats/{fen:path}", response_model=schemas.PositionStatsResponse)
-@limiter.limit("30 per minute")
-async def get_stats_by_fen(request: Request, fen: str):
-    """
-    Returns move statistics for a position from the Lichess opening explorer.
-    """
-    cleaned_fen = unquote(fen)
-    data = await get_lichess_stats(cleaned_fen)
-
-    if not data:
-        raise HTTPException(status_code=404, detail="Position not found")
-
-    return data
-
-
 @app.get("/historical/{fen:path}", response_model=schemas.HistoricalData)
 @limiter.limit("50 per minute")
 async def get_historical_data(request: Request, fen: str):

@@ -8,10 +8,6 @@ class MoveStat(BaseModel):
     draw: int
     total_games: int
 
-class PositionStatsResponse(BaseModel):
-    fen: str
-    moves: list[MoveStat]
-
 class Player(BaseModel):
     name: str
     rating: int

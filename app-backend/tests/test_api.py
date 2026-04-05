@@ -121,99 +121,62 @@ class TestMinimaxEndpoint:
         if data["best_move"] is None:
             assert data["status"] in ["checkmate", "stalemate"]
 
-
-class TestStatsEndpoint:
-    """Tests for GET /stats endpoint - backed by Lichess explorer."""
-
-    @pytest.mark.asyncio
-    async def test_stats_position_not_found(self, client: AsyncClient):
-        """GET /stats when Lichess has no data should return 404."""
-        with patch("main.get_lichess_stats", new=AsyncMock(return_value=None)):
-            response = await client.get(f"/stats/{fen_url('8/8/8/8/8/8/8/8 w - -')}")
-
-        assert response.status_code == 404
-        assert "Position not found" in response.json()["detail"]
-
-    @pytest.mark.asyncio
-    async def test_stats_returns_move_statistics(
-        self, client: AsyncClient, starting_fen: str
-    ):
-        """GET /stats should return processed move statistics from Lichess."""
-        with patch(
-            "main.get_lichess_stats",
-            new=AsyncMock(return_value=LICHESS_STATS_RESPONSE),
-        ):
-            response = await client.get(f"/stats/{fen_url(starting_fen)}")
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert data["fen"] == starting_fen
-        assert len(data["moves"]) == 2
-
-        # Moves should be sorted by total_games (descending)
-        assert data["moves"][0]["total_games"] >= data["moves"][1]["total_games"]
-
-        # Verify schema field names (Lichess 'draws'/'uci' are mapped to 'draw'/'move')
-        for move_stat in data["moves"]:
-            assert "move" in move_stat
-            assert "white" in move_stat
-            assert "black" in move_stat
-            assert "draw" in move_stat
-            assert "total_games" in move_stat
-            assert (
-                move_stat["total_games"]
-                == move_stat["white"] + move_stat["black"] + move_stat["draw"]
-            )
-
-    @pytest.mark.asyncio
-    async def test_stats_moves_sorted_by_popularity(
-        self, client: AsyncClient, starting_fen: str
-    ):
-        """Moves should be sorted by total_games descending even if Lichess returns them reversed."""
-        reversed_data = {
-            **LICHESS_STATS_RESPONSE,
-            "moves": list(reversed(LICHESS_STATS_RESPONSE["moves"])),
+# --- MOCK DATA ---
+# This simulates the full Lichess API response structure
+MOCK_LICHESS_EXPLORER_DATA = {
+    "white": 3771457927,
+    "draws": 296360418,
+    "black": 3508339094,
+    "moves": [
+        {
+            "uci": "e2e4",
+            "san": "e4",
+            "averageRating": 1605,
+            "white": 2195843769,
+            "draws": 170151682,
+            "black": 2069877364,
+            "game": None,
+            "opening": {"eco": "B00", "name": "King's Pawn Game"}
         }
-        with patch(
-            "main.get_lichess_stats", new=AsyncMock(return_value=reversed_data)
-        ):
-            response = await client.get(f"/stats/{fen_url(starting_fen)}")
+    ],
+    "recentGames": [],
+    "topGames": [],
+    "opening": None
+}
 
-        assert response.status_code == 200
-        moves = response.json()["moves"]
-        # e2e4 has 12000 total games vs d2d4's 9000
-        assert moves[0]["move"] == "e2e4"
-        assert moves[0]["total_games"] == 12000
-
-
+# --- TESTS ---
 class TestHistoricalEndpoint:
-    """Tests for GET /historical endpoint - backed by Lichess explorer."""
 
     @pytest.mark.asyncio
-    async def test_historical_returns_most_popular(
-        self, client: AsyncClient, starting_fen: str
+    async def test_historical_returns_lichess_data(
+            self, client: AsyncClient, starting_fen: str
     ):
-        """GET /historical should return the most popular move from Lichess."""
+        """GET /historical should return the full Lichess explorer response."""
         with patch(
-            "main.get_most_popular_move",
-            new=AsyncMock(return_value=LICHESS_POPULAR_MOVE),
+                "main.get_historical_data",
+                new=AsyncMock(return_value=MOCK_LICHESS_EXPLORER_DATA),
         ):
             response = await client.get(f"/historical/{fen_url(starting_fen)}")
 
         assert response.status_code == 200
         data = response.json()
 
-        assert data["move"] == "e2e4"
-        assert data["total_games"] == 12000
-        assert "white" in data
-        assert "black" in data
-        assert "draw" in data
+        assert data["white"] == 3771457927
+        assert data["draws"] == 296360418
+        assert data["black"] == 3508339094
+
+        assert len(data["moves"]) > 0
+        most_popular_move = data["moves"][0]
+        assert most_popular_move["uci"] == "e2e4"
+        assert most_popular_move["san"] == "e4"
 
     @pytest.mark.asyncio
     async def test_historical_position_not_found(self, client: AsyncClient):
         """GET /historical when Lichess has no data should return 404."""
-        with patch("main.get_most_popular_move", new=AsyncMock(return_value=None)):
+        with patch(
+                "main.get_historical_data",
+                new=AsyncMock(return_value=None)
+        ):
             response = await client.get(
                 f"/historical/{fen_url('8/8/8/8/8/8/8/8 w - -')}"
             )
@@ -223,15 +186,29 @@ class TestHistoricalEndpoint:
 
     @pytest.mark.asyncio
     async def test_historical_response_structure(
-        self, client: AsyncClient, starting_fen: str
+            self, client: AsyncClient, starting_fen: str
     ):
-        """GET /historical response should match the MoveStat schema."""
+        """GET /historical response should match the Lichess Explorer schema."""
         with patch(
-            "main.get_most_popular_move",
-            new=AsyncMock(return_value=LICHESS_POPULAR_MOVE),
+                "main.get_historical_data",
+                new=AsyncMock(return_value=MOCK_LICHESS_EXPLORER_DATA),
         ):
             response = await client.get(f"/historical/{fen_url(starting_fen)}")
 
         assert response.status_code == 200
         data = response.json()
-        assert set(data.keys()) == {"move", "white", "black", "draw", "total_games"}
+
+        expected_keys = {
+            "white",
+            "draws",
+            "black",
+            "moves",
+            "recentGames",
+            "topGames",
+            "opening"
+        }
+
+        assert expected_keys.issubset(set(data.keys()))
+        assert isinstance(data["moves"], list)
+        assert isinstance(data["recentGames"], list)
+        assert isinstance(data["topGames"], list)
