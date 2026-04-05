@@ -122,7 +122,6 @@ class TestMinimaxEndpoint:
             assert data["status"] in ["checkmate", "stalemate"]
 
 # --- MOCK DATA ---
-# This simulates the full Lichess API response structure
 MOCK_LICHESS_EXPLORER_DATA = {
     "white": 3771457927,
     "draws": 296360418,
@@ -144,7 +143,7 @@ MOCK_LICHESS_EXPLORER_DATA = {
     "opening": None
 }
 
-# --- TESTS ---
+
 class TestHistoricalEndpoint:
 
     @pytest.mark.asyncio
@@ -153,7 +152,7 @@ class TestHistoricalEndpoint:
     ):
         """GET /historical should return the full Lichess explorer response."""
         with patch(
-                "main.get_historical_data",
+                "main.get_lichess_stats",
                 new=AsyncMock(return_value=MOCK_LICHESS_EXPLORER_DATA),
         ):
             response = await client.get(f"/historical/{fen_url(starting_fen)}")
@@ -174,7 +173,7 @@ class TestHistoricalEndpoint:
     async def test_historical_position_not_found(self, client: AsyncClient):
         """GET /historical when Lichess has no data should return 404."""
         with patch(
-                "main.get_historical_data",
+                "main.get_lichess_stats",
                 new=AsyncMock(return_value=None)
         ):
             response = await client.get(
@@ -190,7 +189,7 @@ class TestHistoricalEndpoint:
     ):
         """GET /historical response should match the Lichess Explorer schema."""
         with patch(
-                "main.get_historical_data",
+                "main.get_lichess_stats",
                 new=AsyncMock(return_value=MOCK_LICHESS_EXPLORER_DATA),
         ):
             response = await client.get(f"/historical/{fen_url(starting_fen)}")
