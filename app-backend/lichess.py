@@ -7,6 +7,7 @@ import httpx
 import logging
 from typing import Optional
 from dotenv import load_dotenv
+import chess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,9 +43,6 @@ async def query_explorer(fen: str, source: str = "lichess") -> Optional[dict]:
             return data if data.get("moves") else None
     except Exception:
         return None
-
-
-import chess
 
 def _standardize_uci(uci: str, fen: str) -> str:
     try:
