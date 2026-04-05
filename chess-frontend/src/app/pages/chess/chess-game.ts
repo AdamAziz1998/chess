@@ -1,15 +1,15 @@
-import {AfterViewInit, Component, inject, PLATFORM_ID, signal, ViewEncapsulation} from '@angular/core';
-import {isPlatformBrowser} from '@angular/common';
-import {Chess, Move, Square} from 'chess.js';
+import { AfterViewInit, Component, inject, PLATFORM_ID, signal, ViewEncapsulation } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Chess, Move, Square } from 'chess.js';
 import { Subject, EMPTY } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {BoardConfig, ChessBoardInstance} from 'chessboardjs';
-import {PromotionModal} from '../../components/promotion-modal/promotion-modal';
-import {HistoricalMove} from '../../services/historical-move';
-import {Sidebar} from '../../components/sidebar/sidebar';
-import {ChessEngineService} from '../../services/engine';
-import {ChessMove, GameMode, PlayMode} from '../../common/types';
+import { BoardConfig, ChessBoardInstance } from 'chessboardjs';
+import { PromotionModal } from '../../components/promotion-modal/promotion-modal';
+import { HistoricalMove } from '../../services/historical-move';
+import { Sidebar } from '../../components/sidebar/sidebar';
+import { ChessEngineService } from '../../services/engine';
+import { HistoricalData, HistoricalMoveData, GameMode, PlayMode } from '../../common/types';
 
 declare const Chessboard: (id: string, config: BoardConfig) => ChessBoardInstance;
 
@@ -24,10 +24,10 @@ export class ChessGame implements AfterViewInit {
   gameMode = signal<GameMode>('play');
   playMode = signal<PlayMode>('pvp');
   gameStatus = signal<string>('White to move');
-  historicalMoves = signal<ChessMove[]>([]);
-  capturedPieces = signal<{color: string, type: string}[]>([]);
+  historicalData = signal<HistoricalData | null>(null);
+  capturedPieces = signal<{ color: string, type: string }[]>([]);
   showPromotionModal = signal<boolean>(false);
-  promotionPendingMove = signal<{source: string, target: string, color: string} | null>(null);
+  promotionPendingMove = signal<{ source: string, target: string, color: string } | null>(null);
 
   private historicalMoveService = inject(HistoricalMove);
   private chessEngineService = inject(ChessEngineService);
@@ -53,17 +53,30 @@ export class ChessGame implements AfterViewInit {
           })
         );
       })
-    ).subscribe((moves) => {
-      const processedMoves = moves.map(move => {
-        const total = move.total || 1;
+    ).subscribe((data) => {
+      console.log('data', data);
+      const totalGlobal = data.white + data.draws + data.black || 1;
+      const processedGlobal: HistoricalData = {
+        ...data,
+        total: totalGlobal,
+        whitePct: Math.round((data.white / totalGlobal) * 100),
+        drawPct: Math.round((data.draws / totalGlobal) * 100),
+        blackPct: Math.round((data.black / totalGlobal) * 100)
+      };
+
+      const processedMoves = data.moves.map(move => {
+        const total = move.white + move.draws + move.black || 1;
         return {
           ...move,
+          total: total,
           whitePct: Math.round((move.white / total) * 100),
-          drawPct: Math.round((move.draw / total) * 100),
+          drawPct: Math.round((move.draws / total) * 100),
           blackPct: Math.round((move.black / total) * 100)
-        } as ChessMove;
+        } as HistoricalMoveData;
       });
-      this.historicalMoves.set(processedMoves);
+
+      processedGlobal.moves = processedMoves;
+      this.historicalData.set(processedGlobal);
     });
   }
 
@@ -284,7 +297,7 @@ export class ChessGame implements AfterViewInit {
     this.removeHighlights();
     this.pendingSource = null;
 
-    if(this.gameMode() === 'explore') {
+    if (this.gameMode() === 'explore') {
       this.fetchHistoricalMoves(this.game.fen());
     } else {
       if (!this.game.isGameOver() && this.isAiTurn()) {
@@ -303,17 +316,16 @@ export class ChessGame implements AfterViewInit {
 
     this.chessEngineService.getBestMoveFromFen(this.game.fen())
       .subscribe({
-        next: (response: ChessMove) => {
-          const bestMove = response.move;
+        next: (response: string) => {
           try {
-            const moveResult = this.game.move(bestMove);
+            const moveResult = this.game.move(response);
 
             if (moveResult && this.board) {
               this.board.position(this.game.fen());
               this.finalizeMoveLogic(moveResult);
             }
           } catch {
-            console.error('Engine returned an invalid move:', bestMove);
+            console.error('Engine returned an invalid move:', response);
           }
         },
         error: (err) => {
@@ -341,18 +353,18 @@ export class ChessGame implements AfterViewInit {
   }
 
   setGameMode(mode: GameMode): void {
-    if(this.gameMode() === mode) return;
+    if (this.gameMode() === mode) return;
     this.gameMode.set(mode);
     this.resetGame();
-    if(mode === 'explore'){
+    if (mode === 'explore') {
       this.fetchHistoricalMoves(this.game.fen());
     } else {
-      this.historicalMoves.set([]);
+      this.historicalData.set(null);
     }
   }
 
   setPlayMode(mode: PlayMode): void {
-    if(this.playMode() === mode) return;
+    if (this.playMode() === mode) return;
     this.playMode.set(mode);
     this.resetGame();
   }
@@ -370,6 +382,7 @@ export class ChessGame implements AfterViewInit {
   }
 
   private fetchHistoricalMoves(fen: string): void {
+    this.historicalData.set(null);
     this.boardMoveSubject$.next(fen);
   }
 

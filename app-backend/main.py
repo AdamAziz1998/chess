@@ -9,7 +9,7 @@ import schemas
 import os
 from minimax.minimax import MiniMaxEngine
 from engine import best_move
-from lichess import get_lichess_stats, get_most_popular_move
+from lichess import get_lichess_stats
 
 
 TESTING = os.getenv("TESTING", "False").lower() == "true"
@@ -24,7 +24,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "OPTIONS"],
+    allow_methods=["GET", "OPTIONS", "FETCH"],
     allow_headers=["Accept", "Content-Type", "Origin"],
 )
 
@@ -55,34 +55,22 @@ async def get_stats_by_fen(request: Request, fen: str):
     if not data:
         raise HTTPException(status_code=404, detail="Position not found")
 
-    move_stats = []
-    for move in data["moves"]:
-        total = move["white"] + move["draws"] + move["black"]
-        move_stats.append({
-            "move": move["uci"],
-            "white": move["white"],
-            "black": move["black"],
-            "draw": move["draws"],
-            "total_games": total,
-        })
-
-    move_stats.sort(key=lambda x: x["total_games"], reverse=True)
-    return {"fen": cleaned_fen, "moves": move_stats}
+    return data
 
 
-@app.get("/historical/{fen:path}", response_model=schemas.MoveStat)
+@app.get("/historical/{fen:path}", response_model=schemas.HistoricalData)
 @limiter.limit("50 per minute")
-async def get_popular_move(request: Request, fen: str):
+async def get_historical_data(request: Request, fen: str):
     """
-    Returns the most popular move for a position from the Lichess opening explorer.
+    Returns the full historical data for a position from the Lichess opening explorer.
     """
     cleaned_fen = unquote(fen)
-    move = await get_most_popular_move(cleaned_fen)
+    move_data = await get_lichess_stats(cleaned_fen)
 
-    if not move:
+    if not move_data:
         raise HTTPException(status_code=404, detail="Position not found")
 
-    return move
+    return move_data
 
 
 @app.get("/minimax/{fen:path}")

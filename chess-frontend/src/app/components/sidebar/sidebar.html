@@ -60,66 +60,78 @@
           <button
             type="button"
             (click)="findMoves()"
-            [disabled]="loading()"
             class="w-full text-center p-3 mt-2 mb-1 bg-[#b58863] text-white rounded-lg hover:bg-[color-mix(in_srgb,#b58863,black_40%)] transition-colors duration-200 disabled:bg-[color-mix(in_srgb,#b58863,white_20%)] disabled:cursor-not-allowed">
-            @if(loading()) {
-              <div class="flex items-center justify-center gap-2">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Searching...
-              </div>
-            } @else {
-              <span>Find Moves</span>
-            }
+            <span>Find Moves</span>
           </button>
         </div>
 
-        @if (historicalMoves().length > 0) {
-          <div class="flex flex-col gap-2 mt-5 min-h-0"
-               [class]="showAll() ? 'flex-1' : ''">
+        @if (historicalData()) {
+          @if (historicalData()?.opening) {
+            <div class="mt-4 px-3 py-2 bg-neutral-800/50 rounded-lg border border-neutral-700 shrink-0">
+              <div class="text-xs text-neutral-400 font-medium">{{ historicalData()?.opening?.eco }}</div>
+              <div class="text-sm text-white font-semibold">{{ historicalData()?.opening?.name }}</div>
+            </div>
+          }
 
-            <div #scrollContainer
-                 class="flex flex-col gap-2 w-full transition-[height] duration-500 ease-in-out"
-                 [class]="showAll() ? 'h-[calc(100vh-36rem)] overflow-y-auto custom-scrollbar pr-1' : 'h-50 overflow-hidden shrink-0'">
+          <div class="mt-4 shrink-0 flex flex-col gap-1">
+            <div class="text-xs text-neutral-400 uppercase tracking-widest font-medium">Position Stats</div>
+            <div class="flex flex-row h-2 w-full rounded-full overflow-hidden mt-1">
+              <div class="bg-white" [style.width]="historicalData()?.whitePct + '%'"></div>
+              <div class="bg-neutral-500" [style.width]="historicalData()?.drawPct + '%'"></div>
+              <div class="bg-black" [style.width]="historicalData()?.blackPct + '%'"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-neutral-400 mt-0.5">
+              <span>White: {{ historicalData()?.whitePct }}%</span>
+              <span>Draws: {{ historicalData()?.drawPct }}%</span>
+              <span>Black: {{ historicalData()?.blackPct }}%</span>
+            </div>
+          </div>
 
-              @for (move of historicalMoves(); track move) {
-                <div (click)="historicalMoveClicked.emit(move.move)"
-                        class="py-1 px-3 rounded-md transition-colors duration-200 border border-neutral-900 hover:border-neutral-700 h-8 shrink-0 flex gap-4">
-                  <div class="w-6">{{ move.move }}</div>
-                  <div class="w-15">{{move.total}}</div>
-                  <div class="flex flex-row flex-1 rounded-md overflow-hidden">
-                    <div class="bg-white text-black" [ngClass]="'w-[' + move.whitePct + '%]'">
-                      @if (move.whitePct && move.whitePct > 15) {
-                        <div class="pl-2">{{move.whitePct}}%</div>
-                      }
-                    </div>
-                    <div class="bg-neutral-800" [ngClass]="'w-[' + move.drawPct + '%]'">
-                      @if (move.drawPct && move.drawPct > 15) {
-                        <div class="pl-2">{{move.drawPct}}%</div>
-                      }
-                    </div>
-                    <div class="bg-neutral-950" [ngClass]="'w-[' + move.blackPct + '%]'">
-                      @if (move.blackPct && move.blackPct > 15) {
-                        <div class="pl-2">{{move.blackPct}}%</div>
-                      }
+          @if (historicalData()?.moves?.length) {
+            <div class="flex flex-col gap-2 mt-4 min-h-0"
+                 [class]="showAll() ? 'flex-1' : ''">
+
+              <div #scrollContainer
+                   class="flex flex-col gap-2 w-full transition-[height] duration-500 ease-in-out"
+                   [class]="showAll() ? 'h-[calc(100vh-36rem)] overflow-y-auto custom-scrollbar pr-1' : 'h-40 overflow-hidden shrink-0'">
+
+                @for (move of historicalData()!.moves; track move) {
+                  <div (click)="historicalMoveClicked.emit(move.san)"
+                          class="py-1 px-3 rounded-md transition-colors duration-200 border border-neutral-900 hover:border-neutral-700 h-8 shrink-0 flex gap-3 cursor-pointer items-center">
+                    <div class="w-8 font-medium">{{ move.san }}</div>
+                    <div class="w-14 text-neutral-400 text-xs text-right">{{move.total | numberFormat}}</div>
+                    <div class="flex flex-row flex-1 rounded-sm overflow-hidden h-4">
+                      <div class="bg-white text-black flex items-center h-full" [style.width]="move.whitePct + '%'">
+                        @if (move.whitePct && move.whitePct > 20) {
+                          <div class="pl-1 text-[9px] font-bold leading-none">{{move.whitePct}}%</div>
+                        }
+                      </div>
+                      <div class="bg-neutral-600 flex items-center h-full" [style.width]="move.drawPct + '%'">
+                        @if (move.drawPct && move.drawPct > 20) {
+                          <div class="pl-1 text-[9px] text-white font-bold leading-none">{{move.drawPct}}%</div>
+                        }
+                      </div>
+                      <div class="bg-black flex items-center h-full" [style.width]="move.blackPct + '%'">
+                        @if (move.blackPct && move.blackPct > 20) {
+                          <div class="pl-1 text-[9px] text-white font-bold leading-none">{{move.blackPct}}%</div>
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
+                }
+              </div>
+
+              @if (historicalData()!.moves.length > 5) {
+                <button (click)="toggleShowAll(); scrollContainer.scrollTop = 0"
+                        class="text-xs font-medium text-gray-400 hover:text-white underline decoration-gray-500 hover:decoration-white transition-all self-start shrink-0 py-1">
+                  {{ showAll() ? 'Show less' : 'Show ' + (historicalData()!.moves.length - 5) + ' more' }}
+                </button>
               }
             </div>
-
-            @if (historicalMoves().length > 5) {
-              <button (click)="toggleShowAll(); scrollContainer.scrollTop = 0"
-                      class="text-xs font-medium text-gray-400 hover:text-white underline decoration-gray-500 hover:decoration-white transition-all self-start shrink-0 py-2">
-                {{ showAll() ? 'Show less' : 'Show ' + (historicalMoves().length - 5) + ' more' }}
-              </button>
-            }
-          </div>
+          }
         } @else {
           <p class="font-medium text-neutral-500 text-sm text-center my-10 shrink-0">
-            No historical moves found for this position
+            No historical data found for this position
           </p>
         }
       }

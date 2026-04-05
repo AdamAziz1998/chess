@@ -1,16 +1,15 @@
-import {inject, Injectable} from '@angular/core';
-import {ChessMove} from '../common/types';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environent';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class ChessEngineService {
   private http: HttpClient = inject(HttpClient);
-  private readonly baseUrl = environment.historicalUrl;
+  private readonly engineUrl = environment.engineUrl;
 
-  getBestMoveFromFen(fen: string): Observable<ChessMove> {
+  getBestMoveFromFen(fen: string): Observable<string> {
     const encodedFen = encodeURIComponent(fen);
-    return this.http.get<ChessMove>(`${this.baseUrl}/${encodedFen}`);
+    return this.http.get<string>(`${this.engineUrl}/${encodedFen}`);
   }
 }
