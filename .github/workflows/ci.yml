@@ -35,6 +35,8 @@ jobs:
         run: ruff check . --output-format=github
 
       - name: Run tests with pytest
+        env:
+          LICHESS_API_TOKEN: ${{ secrets.LICHESS_PAT }}
         run: python -m pytest tests/ -v --tb=short
 
   frontend-ci:

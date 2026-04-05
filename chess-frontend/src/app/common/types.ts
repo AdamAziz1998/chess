@@ -30,7 +30,6 @@ export interface HistoricalMoveData {
   white: number;
   draws: number;
   black: number;
-  game: any | null;
   opening: Opening | null;
   total?: number;
   whitePct?: number;
