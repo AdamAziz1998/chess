@@ -7,7 +7,6 @@ import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 import { ChessEngineService } from './engine';
-import { ChessMove } from '../common/types';
 import { environment } from '../../environments/environent';
 
 describe('ChessEngineService', () => {
@@ -33,16 +32,7 @@ describe('ChessEngineService', () => {
   });
 
   describe('getBestMoveFromFen', () => {
-    const mockMove: ChessMove = {
-      move: 'e2e4',
-      total: 1500,
-      white: 800,
-      black: 400,
-      draw: 300,
-      whitePct: 53.3,
-      drawPct: 20,
-      blackPct: 26.7,
-    };
+    const mockMove = 'e2e4'; // Changed from object to string
 
     it('should be created', () => {
       expect(service).toBeTruthy();
@@ -51,7 +41,7 @@ describe('ChessEngineService', () => {
     it('should correctly encode FEN string in request URL', () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
       const encodedFen = encodeURIComponent(fenString);
-      const expectedUrl = `${environment.historicalUrl}/${encodedFen}`;
+      const expectedUrl = `${environment.engineUrl}/${encodedFen}`; // Changed to engineUrl
 
       service.getBestMoveFromFen(fenString).subscribe();
 
@@ -80,23 +70,19 @@ describe('ChessEngineService', () => {
       req.flush(mockMove);
     });
 
-    it('should return ChessMove on successful response', async () => {
+    it('should return a string on successful response', async () => {
       const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
 
       const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
       req.flush(mockMove);
 
       const result = await resultPromise;
-      expect(result).toEqual(mockMove);
-      expect(result.move).toBe('e2e4');
-      expect(result.total).toBe(1500);
-      expect(result.white).toBe(800);
-      expect(result.black).toBe(400);
-      expect(result.draw).toBe(300);
+      // Now expecting just the string response
+      expect(result).toBe(mockMove);
     });
 
     it('should handle 500 Internal Server Error gracefully', async () => {
@@ -105,7 +91,7 @@ describe('ChessEngineService', () => {
       const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
 
       req.flush('Internal Server Error', {
@@ -129,7 +115,7 @@ describe('ChessEngineService', () => {
       const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
 
       req.flush({ detail: 'Position not found' }, {
@@ -152,7 +138,7 @@ describe('ChessEngineService', () => {
       const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
 
       req.error(new ProgressEvent('error'), {
@@ -175,7 +161,7 @@ describe('ChessEngineService', () => {
       const resultPromise = firstValueFrom(service.getBestMoveFromFen(invalidFen));
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
 
       req.flush({ detail: 'Invalid FEN string' }, {
@@ -198,7 +184,7 @@ describe('ChessEngineService', () => {
       const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
 
       req.flush('Service Unavailable', {
@@ -223,11 +209,11 @@ describe('ChessEngineService', () => {
       service.getBestMoveFromFen(fenString).subscribe();
 
       const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
+        request.url.startsWith(environment.engineUrl) // Changed to engineUrl
       );
 
-      expect(req.request.url).toBe(`${environment.historicalUrl}/${fenString}`);
-      req.flush({});
+      expect(req.request.url).toBe(`${environment.engineUrl}/${fenString}`); // Changed to engineUrl
+      req.flush('e4');
     });
 
     it('should handle FEN with slashes correctly after encoding', () => {
@@ -242,63 +228,7 @@ describe('ChessEngineService', () => {
       });
 
       expect(req.request.method).toBe('GET');
-      req.flush({});
-    });
-  });
-
-  describe('response parsing', () => {
-    it('should handle response with missing optional fields', async () => {
-      const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
-
-      const partialMove: Partial<ChessMove> = {
-        move: 'd2d4',
-        total: 1000,
-        white: 500,
-        black: 300,
-        draw: 200,
-        // whitePct, drawPct, blackPct are optional and missing
-      };
-
-      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
-
-      const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
-      );
-      req.flush(partialMove);
-
-      const result = await resultPromise;
-      expect(result.move).toBe('d2d4');
-      expect(result.whitePct).toBeUndefined();
-      expect(result.drawPct).toBeUndefined();
-      expect(result.blackPct).toBeUndefined();
-    });
-
-    it('should handle complete response with all fields', async () => {
-      const fenString = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -';
-
-      const completeMove: ChessMove = {
-        move: 'e2e4',
-        total: 1800,
-        white: 900,
-        black: 500,
-        draw: 400,
-        whitePct: 50,
-        drawPct: 22.2,
-        blackPct: 27.8,
-      };
-
-      const resultPromise = firstValueFrom(service.getBestMoveFromFen(fenString));
-
-      const req = httpMock.expectOne((request) =>
-        request.url.startsWith(environment.historicalUrl)
-      );
-      req.flush(completeMove);
-
-      const result = await resultPromise;
-      expect(result).toEqual(completeMove);
-      expect(result.whitePct).toBe(50);
-      expect(result.drawPct).toBe(22.2);
-      expect(result.blackPct).toBe(27.8);
+      req.flush('e4');
     });
   });
 });
