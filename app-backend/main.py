@@ -9,12 +9,12 @@ from urllib.parse import unquote
 import schemas
 import os
 from dotenv import load_dotenv
-load_dotenv()
 
 from minimax.minimax import MiniMaxEngine
 from engine import best_move
 from lichess import get_lichess_stats
 
+load_dotenv()
 
 
 TESTING = os.getenv("TESTING", "False").lower() == "true"
