@@ -1,0 +1,38 @@
+# Python virtual environment generated files
+bin/
+include/
+lib/
+pyvenv.cfg
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Local caches
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Neural network caches and models
+neuralNetwork/__pycache__/
+neuralNetwork/nn_model/__pycache__/
+neuralNetwork/nn_model/chess_model.pt

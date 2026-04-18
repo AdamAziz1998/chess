@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./app-backend
+      dockerfile: Dockerfile
+    container_name: chess_backend
+    restart: unless-stopped
+    ports:
+      # Exposes the backend directly to the host on port 8000
+      # The frontend will communicate securely via the host's IP/domain and this port.
+      # Alternatively, you could use Nginx as a reverse proxy to route /api requests here,
+      # but exposing the port is standard for FastAPI standalone services.
+      - "8000:8000"
+    networks:
+      - chess_network
+    env_file:
+      # Automatically loads environment variables from a .env file if present
+      # You should place a .env file in the root of the project with your secrets,
+      # such as DATABASE_URL and SENTRY_DSN.
+      - .env
+    environment:
+      # Placeholders for environment variables (overridden by .env if provided).
+      # The frontend will make calls to the backend, so we need to allow the VPS IP
+      # and/or domain name in the ALLOWED_ORIGINS.
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:4200,http://YOUR_VPS_IP}
+      - DATABASE_URL=${DATABASE_URL}
+      - API_KEY=${API_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - TESTING=False
+
+  frontend:
+    build:
+      context: ./chess-frontend
+      dockerfile: Dockerfile
+    container_name: chess_frontend
+    restart: unless-stopped
+    ports:
+      # Map the Nginx container port 80 to the host port 80 (HTTP)
+      - "80:80"
+    networks:
+      - chess_network
+    depends_on:
+      # Ensure the backend service is started before the frontend
+      - backend
+
+networks:
+  # Custom bridge network for secure inter-container communication
+  chess_network:
+    driver: bridge
