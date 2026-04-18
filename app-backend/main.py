@@ -9,12 +9,12 @@ from urllib.parse import unquote
 import schemas
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from minimax.minimax import MiniMaxEngine
 from engine import best_move
 from lichess import get_lichess_stats
+
 
 
 TESTING = os.getenv("TESTING", "False").lower() == "true"
@@ -79,7 +79,7 @@ def calculate_minimax(request: Request, fen: str, depth: int = 4):
 
     try:
         best_move_uci, score = MiniMaxEngine.get_best_move_from_fen(cleaned_fen, depth=depth)
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="AI Engine failed to evaluate position")
 
     if best_move_uci is None and score == 0:
