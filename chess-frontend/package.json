@@ -35,11 +35,12 @@
     "@angular/router": "^21.0.0",
     "@angular/ssr": "^21.0.3",
     "@chrisoakman/chessboardjs": "^1.0.0",
+    "@sentry/angular": "^10.48.0",
     "@vitest/browser-playwright": "^4.0.18",
     "chess.js": "^1.4.0",
     "express": "^5.1.0",
-    "particles.js": "^2.0.0",
     "jquery": "^3.7.1",
+    "particles.js": "^2.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -1,3 +1,4 @@
+import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -7,6 +8,10 @@ from urllib.parse import unquote
 
 import schemas
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from minimax.minimax import MiniMaxEngine
 from engine import best_move
 from lichess import get_lichess_stats
@@ -14,6 +19,15 @@ from lichess import get_lichess_stats
 
 TESTING = os.getenv("TESTING", "False").lower() == "true"
 limiter = Limiter(key_func=get_remote_address, enabled=not TESTING)
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+
+    traces_sample_rate=0.05,
+    profiles_sample_rate=0.05,
+
+    send_default_pii=True,
+)
 
 app = FastAPI()
 
@@ -24,7 +38,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "OPTIONS", "FETCH"],
+    allow_methods=["GET", "OPTIONS", "POST"],
     allow_headers=["Accept", "Content-Type", "Origin"],
 )
 
@@ -63,7 +77,10 @@ async def get_historical_data(request: Request, fen: str):
 def calculate_minimax(request: Request, fen: str, depth: int = 4):
     cleaned_fen = unquote(fen)
 
-    best_move_uci, score = MiniMaxEngine.get_best_move_from_fen(cleaned_fen, depth=depth)
+    try:
+        best_move_uci, score = MiniMaxEngine.get_best_move_from_fen(cleaned_fen, depth=depth)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="AI Engine failed to evaluate position")
 
     if best_move_uci is None and score == 0:
         raise HTTPException(status_code=400, detail="Invalid FEN string")

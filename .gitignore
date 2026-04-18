@@ -25,3 +25,8 @@ build/
 *.pt
 *.dat
 setup/
+
+# Environments
+.env
+.env.*
+*.env
