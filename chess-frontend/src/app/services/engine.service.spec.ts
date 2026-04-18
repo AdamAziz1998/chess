@@ -7,7 +7,7 @@ import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 import { ChessEngineService } from './engine';
-import { environment } from '../../environments/environent';
+import { environment } from '../../environments/environment';
 
 describe('ChessEngineService', () => {
   let service: ChessEngineService;
